@@ -11,7 +11,7 @@ type UserService interface {
 	//ChangePassword(user *User, password string) error
 	//Validate(user *User)
 	//Auth(user *User, password string) error
-	//IsValid(user *User) bool
+	IsValidPassword(user *User) (bool, error)
 	//GetRepo() UserRepository
 }
 
@@ -34,6 +34,18 @@ func (service *userService) Register(user *User) (*User, error) {
 		return nil, err
 	}
 	return user, nil
+}
+
+func (service *userService) IsValidPassword(user *User) (bool, error) {
+	us, err := service.repo.FindByEmail(user.Email)
+	if err != nil{
+		return false, err
+	}
+	err = bcrypt.CompareHashAndPassword([]byte(us.Password) ,[]byte(user.Password))
+	if err != nil {
+		return false, nil
+	}
+	return true, nil
 }
 
 func comparePasswords(hashedPwd string, plainPwd string) bool {

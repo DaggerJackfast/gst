@@ -61,6 +61,12 @@ func main() {
 		panic(err)
 	}
 	fmt.Println(user.Id, user.Email, user.Username, user.Password)
+	usu.Password = "qweqwe"
+	status, err := us.IsValidPassword(&usu)
+	if err != nil{
+		panic(err)
+	}
+	fmt.Println(status)
 	err = repo.Delete(user.Id)
 	if err != nil{
 		panic(err)
