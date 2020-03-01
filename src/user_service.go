@@ -7,9 +7,9 @@ import (
 type UserService interface {
 	Register(user *User) (*User, error)
 	//ForgotPassword(user *User) error
-	//ChangePassword(user *User, password string) error
+	ChangePassword(user *User, password string) error
 	//Validate(user *User)
-	//Auth(user *User, password string) error
+	//Login(user *User, password string) error
 	IsValidPassword(user *User) (bool, error)
 	GetRepo() UserRepository
 }
@@ -33,6 +33,19 @@ func (service *userService) Register(user *User) (*User, error) {
 		return nil, err
 	}
 	return user, nil
+}
+
+func (service *userService) ChangePassword(user *User, password string) error {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
+	if err != nil {
+		return err
+	}
+	user.Password = string(hash)
+	err = service.repo.Update(user)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (service *userService) IsValidPassword(user *User) (bool, error) {
