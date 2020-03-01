@@ -12,14 +12,14 @@ type UserRepository interface {
 	All() ([]*User, error)
 	Update(user *User) error
 	Store(user *User) (*User, error)
-	Delete(id int) error
+	Delete(id int64) error
 }
 
 type userRepository struct {
 	db sql.DB
 }
 
-func NewUserRepository(db sql.DB) *userRepository {
+func NewUserRepository(db sql.DB) UserRepository {
 	return &userRepository{
 		db: db,
 	}

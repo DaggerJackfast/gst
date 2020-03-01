@@ -54,4 +54,16 @@ func main() {
 	if err != nil{
 		panic(err)
 	}
+	us := NewUserService(repo)
+	usu := User{Email: "ee@mail.com",Username: "ee", Password: "qweqwe"}
+	user, err = us.Register(&usu)
+	if err != nil{
+		panic(err)
+	}
+	fmt.Println(user.Id, user.Email, user.Username, user.Password)
+	err = repo.Delete(user.Id)
+	if err != nil{
+		panic(err)
+	}
+
 }
