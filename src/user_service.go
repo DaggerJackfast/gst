@@ -2,7 +2,6 @@ package main
 
 import (
 	"golang.org/x/crypto/bcrypt"
-	"log"
 )
 
 type UserService interface {
@@ -12,7 +11,7 @@ type UserService interface {
 	//Validate(user *User)
 	//Auth(user *User, password string) error
 	IsValidPassword(user *User) (bool, error)
-	//GetRepo() UserRepository
+	GetRepo() UserRepository
 }
 
 type userService struct {
@@ -48,14 +47,6 @@ func (service *userService) IsValidPassword(user *User) (bool, error) {
 	return true, nil
 }
 
-func comparePasswords(hashedPwd string, plainPwd string) bool {
-	byteHash := []byte(hashedPwd)
-	bytePlainPwd := []byte(plainPwd)
-	err := bcrypt.CompareHashAndPassword(byteHash, bytePlainPwd)
-	if err != nil {
-		log.Println(err)
-		return false
-	}
-
-	return true
+func (service *userService) GetRepo() UserRepository{
+	return service.repo
 }
