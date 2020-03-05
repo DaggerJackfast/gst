@@ -23,7 +23,11 @@
 *.sql
 
 # Log files
+log
 *.log
+
+# Environment variables
+.env
 
 # IDE
 .idea

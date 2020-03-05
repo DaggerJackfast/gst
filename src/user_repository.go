@@ -6,13 +6,13 @@ import (
 )
 
 type UserRepository interface {
-	Find(id int) (*User, error)
+	Find(id uint) (*User, error)
 	FindByEmail(email string) (*User, error)
 	FindByUsername(username string) (*User, error)
 	All() ([]*User, error)
 	Update(user *User) error
 	Store(user *User) (*User, error)
-	Delete(id int64) error
+	Delete(id uint64) error
 }
 
 type userRepository struct {
@@ -25,7 +25,7 @@ func NewUserRepository(db sql.DB) UserRepository {
 	}
 }
 
-func (repo *userRepository) Find(id int) (*User, error) {
+func (repo *userRepository) Find(id uint) (*User, error) {
 	row := repo.db.QueryRow("select * from users where id=$1", id)
 	var user User
 	err := row.Scan(&user.Id, &user.Email, &user.Username, &user.Password)
@@ -92,7 +92,7 @@ func (repo *userRepository) Store(user *User) (*User, error) {
 	return user, nil
 }
 
-func (repo *userRepository) Delete(id int64) error {
+func (repo *userRepository) Delete(id uint64) error {
 	_, err := repo.db.Exec("delete from users where id=$1", id)
 	if err != nil {
 		return err
