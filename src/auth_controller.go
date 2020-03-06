@@ -3,28 +3,31 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
+	"github.com/go-playground/validator/v10"
 	"log"
 	"net/http"
 )
 
-type UserController interface {
+type AuthController interface {
 	Register(w http.ResponseWriter, r *http.Request)
 	Login(w http.ResponseWriter, r *http.Request)
+	ChangePassword(w http.ResponseWriter, r *http.Request)
 }
 
-type userController struct {
+type authController struct {
 	db     sql.DB
 	logger *log.Logger
 }
 
-func NewUserController(db sql.DB, logger *log.Logger) UserController {
-	return &userController{
+func NewUserController(db sql.DB, logger *log.Logger) AuthController {
+	return &authController{
 		db:     db,
 		logger: logger,
 	}
 }
 
-func (controller userController) Register(w http.ResponseWriter, r *http.Request) {
+func (controller authController) Register(w http.ResponseWriter, r *http.Request) {
 	service := NewAuthService(NewUserRepository(controller.db))
 	user := User{}
 	err := json.NewDecoder(r.Body).Decode(&user)
@@ -42,7 +45,7 @@ func (controller userController) Register(w http.ResponseWriter, r *http.Request
 	JSON(w, http.StatusOK, user)
 }
 
-func (controller userController) Login(w http.ResponseWriter, r *http.Request) {
+func (controller authController) Login(w http.ResponseWriter, r *http.Request) {
 	service := NewAuthService(NewUserRepository(controller.db))
 	user := User{}
 	err := json.NewDecoder(r.Body).Decode(&user)
@@ -65,4 +68,47 @@ func (controller userController) Login(w http.ResponseWriter, r *http.Request) {
 	}
 	data := AuthUserToken{User: user, Token: token}
 	JSON(w, http.StatusOK, data)
+}
+
+func (controller authController) ChangePassword(w http.ResponseWriter, r *http.Request) {
+	service := NewAuthService(NewUserRepository(controller.db))
+	userId, err := ExtractTokenId(r)
+	if err != nil {
+		controller.logger.Println(err.Error())
+		ERROR(w, http.StatusUnauthorized, err)
+		return
+	}
+	currentUser, err := service.GetUser(userId)
+	if err != nil{
+		controller.logger.Println(err.Error())
+		ERROR(w, http.StatusNotFound, err)
+		return
+	}
+	p := Passwords{}
+	err = json.NewDecoder(r.Body).Decode(&p)
+	if err != nil{
+		controller.logger.Println(err.Error())
+		ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+	validate := validator.New()
+	err = validate.Struct(p)
+	if err != nil {
+		controller.logger.Println(err.Error())
+		ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+	if valid := service.IsValidPassword(currentUser, p.OldPassword); !valid{
+		err = errors.New("Password is incorrect")
+		controller.logger.Println(err.Error())
+		ERROR(w, http.StatusForbidden, err)
+		return
+	}
+	err = service.ChangePassword(currentUser, p.NewPassword)
+	if err != nil{
+		controller.logger.Println(err.Error())
+		ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+	JSON(w, http.StatusOK, currentUser)
 }

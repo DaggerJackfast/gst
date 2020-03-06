@@ -2,11 +2,10 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 )
 
 type UserRepository interface {
-	Find(id uint) (*User, error)
+	Find(id uint64) (*User, error)
 	FindByEmail(email string) (*User, error)
 	FindByUsername(username string) (*User, error)
 	All() ([]*User, error)
@@ -25,7 +24,7 @@ func NewUserRepository(db sql.DB) UserRepository {
 	}
 }
 
-func (repo *userRepository) Find(id uint) (*User, error) {
+func (repo *userRepository) Find(id uint64) (*User, error) {
 	row := repo.db.QueryRow("select * from users where id=$1", id)
 	var user User
 	err := row.Scan(&user.Id, &user.Email, &user.Username, &user.Password)
@@ -66,7 +65,6 @@ func (repo *userRepository) All() ([]*User, error) {
 		u := User{}
 		err := rows.Scan(&u.Id, &u.Email, &u.Username, &u.Password)
 		if err != nil {
-			fmt.Println(err)
 			continue
 		}
 		users = append(users, &u)

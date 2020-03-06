@@ -18,3 +18,8 @@ type AuthUserToken struct {
 	User User `json:"user"`
 	Token string `json:"token"`
 }
+
+type Passwords struct{
+	OldPassword string `json:"old_password" validate:"required,omitempty" structs:"required,omitempty"`
+	NewPassword string `json:"new_password" validate:"required,omitempty" structs:"required,omitempty"`
+}

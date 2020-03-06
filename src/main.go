@@ -69,7 +69,7 @@ func test() {
 	fmt.Println(usu.Id, usu.Email, usu.Username, usu.Password)
 	password := "qweqwe"
 	usu.Password = password
-	status:= us.IsValidPassword(&usu, password)
+	status := us.IsValidPassword(&usu, password)
 	fmt.Println(status)
 	err = repo.Delete(user.Id)
 	if err != nil {
@@ -99,11 +99,13 @@ func run() {
 	router := mux.NewRouter()
 	router.HandleFunc("/user/register", SetMiddlewareJSON(userController.Register)).Methods("POST")
 	router.HandleFunc("/user/login", SetMiddlewareJSON(userController.Login)).Methods("POST")
+	router.HandleFunc("/user/change-password",
+		SetMiddlewareJSON(SetMiddlewareAuthentication(userController.ChangePassword))).Methods("POST")
 	fmt.Printf("The server is started at %s \n", "http://0.0.0.0:5050")
 	logger.Fatal(http.ListenAndServe(":5050", router))
 }
 
-func init(){
+func init() {
 	if err := dotenv.Load(); err != nil {
 		log.Fatal("Error loading .env file")
 	}

@@ -8,6 +8,7 @@ import (
 
 type AuthService interface {
 	Register(user *User) error
+	GetUser(userId uint64) (*User, error)
 	//ForgotPassword(user *User) error
 	//Validate(user *User)
 	Login(user *User) error
@@ -71,6 +72,14 @@ func (service *authService) IsValidPassword(user *User, password string) bool {
 		fmt.Println(err.Error())
 	}
 	return err == nil
+}
+
+func (service *authService) GetUser(userId uint64) (*User, error) {
+	user, err := service.repo.Find(userId)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
 func (service *authService) GetRepo() UserRepository {
