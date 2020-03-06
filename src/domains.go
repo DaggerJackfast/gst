@@ -7,6 +7,13 @@ type User struct {
 	Password string `json:"password"`
 }
 
+func (user *User) Modify(us User){
+	user.Id = us.Id
+	user.Email = us.Email
+	user.Username = us.Username
+	user.Password = us.Password
+}
+
 type AuthUserToken struct {
 	User User `json:"user"`
 	Token string `json:"token"`

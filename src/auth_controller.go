@@ -33,17 +33,13 @@ func (controller userController) Register(w http.ResponseWriter, r *http.Request
 		ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
-	us, err := service.Register(&user)
-	if err != nil && us == nil {
+	err = service.Register(&user)
+	if err != nil {
 		controller.logger.Println(err.Error())
-		ERROR(w, http.StatusNotFound, err)
-		return
-	} else if err != nil {
-		controller.logger.Println(err.Error())
-		ERROR(w, http.StatusInternalServerError, err)
+		ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
-	JSON(w, http.StatusOK, us)
+	JSON(w, http.StatusOK, user)
 }
 
 func (controller userController) Login(w http.ResponseWriter, r *http.Request) {

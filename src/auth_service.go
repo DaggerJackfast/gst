@@ -7,7 +7,7 @@ import (
 )
 
 type AuthService interface {
-	Register(user *User) (*User, error)
+	Register(user *User) error
 	//ForgotPassword(user *User) error
 	//Validate(user *User)
 	Login(user *User) error
@@ -24,29 +24,31 @@ func NewAuthService(repo UserRepository) AuthService {
 	return &authService{repo: repo}
 }
 
-func (service *authService) Register(user *User) (*User, error) {
+func (service *authService) Register(user *User) error {
 	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.MinCost)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	user.Password = string(hash)
-	user, err = service.repo.Store(user)
+	us, err := service.repo.Store(user)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return user, nil
+	user.Modify(*us)
+	return nil
 }
 
 func (service *authService) Login(user *User) error {
 	password := user.Password
-	user, err := service.repo.FindByEmail(user.Email)
+	us, err := service.repo.FindByEmail(user.Email)
 	if err != nil {
 		return err
 	}
-	valid := service.IsValidPassword(user, password)
+	valid := service.IsValidPassword(us, password)
 	if !valid {
 		return errors.New("Password is incorrect")
 	}
+	user.Modify(*us)
 	return nil
 }
 

@@ -62,11 +62,11 @@ func test() {
 	}
 	us := NewAuthService(repo)
 	usu := User{Email: "ee@mail.com", Username: "ee", Password: "qweqwe"}
-	user, err = us.Register(&usu)
+	err = us.Register(&usu)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(user.Id, user.Email, user.Username, user.Password)
+	fmt.Println(usu.Id, usu.Email, usu.Username, usu.Password)
 	password := "qweqwe"
 	usu.Password = password
 	status:= us.IsValidPassword(&usu, password)
@@ -97,8 +97,8 @@ func run() {
 	var logger = log.New(generalLogFile, "General Logger:\t", log.Ldate|log.Ltime|log.Lshortfile)
 	userController := NewUserController(*db, logger)
 	router := mux.NewRouter()
-	router.HandleFunc("/user/register", userController.Register).Methods("POST")
-	router.HandleFunc("/user/login", userController.Login).Methods("POST")
+	router.HandleFunc("/user/register", SetMiddlewareJSON(userController.Register)).Methods("POST")
+	router.HandleFunc("/user/login", SetMiddlewareJSON(userController.Login)).Methods("POST")
 	fmt.Printf("The server is started at %s \n", "http://0.0.0.0:5050")
 	logger.Fatal(http.ListenAndServe(":5050", router))
 }
