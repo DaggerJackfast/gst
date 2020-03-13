@@ -1,7 +1,14 @@
 package main
 
 const (
-	SUCCESS = "SUCCESS"
-	FAILURE = "FAILURE"
-	WARNING = "WARNING"
+	Success     = "success"
+	Failure     = "failure"
+	Warning     = "warning"
+	ForgotPasswordToken = "forgot_password_token"
+	ConfirmProfileToken = "confirm_profile_token"
+
+)
+const (
+	ExpiredInForgotPasswordToken uint64 = 14400 //seconds = 4 hours
+	ExpiredInConfirmProfileToken uint64 = 172800 //seconds = 48 hours = 2 days
 )

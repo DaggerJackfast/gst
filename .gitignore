@@ -21,7 +21,6 @@ pkg/
 
 # Database files
 *.db
-*.sql
 
 # Log files
 log

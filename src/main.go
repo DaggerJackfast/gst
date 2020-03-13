@@ -21,6 +21,7 @@ func test() {
 	}
 	defer db.Close()
 	repo := NewUserRepository(*db)
+	token_repo := NewUserProfileTokenRepository(*db)
 	users, err := repo.All()
 	if err != nil {
 		panic(err)
@@ -60,7 +61,7 @@ func test() {
 	if err != nil {
 		panic(err)
 	}
-	us := NewAuthService(repo)
+	us := NewAuthService(repo, token_repo)
 	usu := User{Email: "ee@mail.com", Username: "ee", Password: "qweqwe"}
 	err = us.Register(&usu)
 	if err != nil {
@@ -97,9 +98,10 @@ func run() {
 	var logger = log.New(generalLogFile, "General Logger:\t", log.Ldate|log.Ltime|log.Lshortfile)
 	userController := NewUserController(*db, logger)
 	router := mux.NewRouter()
-	router.HandleFunc("/user/register", SetMiddlewareJSON(userController.Register)).Methods("POST")
-	router.HandleFunc("/user/login", SetMiddlewareJSON(userController.Login)).Methods("POST")
-	router.HandleFunc("/user/change-password",
+	router.HandleFunc("/auth/register", SetMiddlewareJSON(userController.Register)).Methods("POST")
+	router.HandleFunc("/auth/login", SetMiddlewareJSON(userController.Login)).Methods("POST")
+	router.HandleFunc("/auth/forgot-password", SetMiddlewareJSON(userController.ForgotPassword)).Methods("POST")
+	router.HandleFunc("/auth/change-password",
 		SetMiddlewareJSON(SetMiddlewareAuthentication(userController.ChangePassword))).Methods("POST")
 	fmt.Printf("The server is started at %s \n", "http://0.0.0.0:5050")
 	logger.Fatal(http.ListenAndServe(":5050", router))
