@@ -103,6 +103,8 @@ func run() {
 	router.HandleFunc("/auth/forgot-password", SetMiddlewareJSON(userController.ForgotPassword)).Methods("POST")
 	router.HandleFunc("/auth/change-password",
 		SetMiddlewareJSON(SetMiddlewareAuthentication(userController.ChangePassword))).Methods("POST")
+	router.HandleFunc("/auth/reset-password",
+		SetMiddlewareJSON(userController.ResetPassword)).Methods("POST")
 	fmt.Printf("The server is started at %s \n", "http://0.0.0.0:5050")
 	logger.Fatal(http.ListenAndServe(":5050", router))
 }

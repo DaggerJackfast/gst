@@ -38,6 +38,12 @@ type UserEmail struct {
 	Email string `json:"email" validate:"email,required,omitempty" structs:"required,omitempty"`
 }
 
+type EmailPasswordToken struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	Token    string `json:"token"`
+}
+
 type Passwords struct {
 	OldPassword string `json:"old_password" validate:"required,omitempty" structs:"required,omitempty"`
 	NewPassword string `json:"new_password" validate:"required,omitempty" structs:"required,omitempty"`

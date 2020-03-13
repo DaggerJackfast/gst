@@ -23,7 +23,7 @@ func NewUserProfileTokenRepository(db sql.DB) UserProfileTokenRepository {
 
 func (repo *userProfileTokenRepository) FindUserTokenByStatus(user *User, tokenType string) (*UserProfileToken, error) {
 	row := repo.db.QueryRow(`select * from user_profile_tokens where user_id=$1 
-                                    and token_type= $2 and is_active=true order by created_at`,
+                                    and token_type= $2 and is_active=true order by created_at desc limit 1`,
 		user.Id, tokenType)
 	var token UserProfileToken
 	var userId uint64

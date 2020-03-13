@@ -11,6 +11,7 @@ type AuthService interface {
 	Register(user *User) error
 	GetUser(userId uint64) (*User, error)
 	ForgotPassword(email string) (*UserProfileToken, error)
+	ResetPassword(email, password, token string) error
 	//Validate(user *User)
 	ValidateToken(user *User, tokenValue, tokenType string) error
 	Login(user *User) error
@@ -26,7 +27,7 @@ type authService struct {
 
 func NewAuthService(userRepo UserRepository, tokenRepo UserProfileTokenRepository) AuthService {
 	return &authService{
-		userRepo: userRepo,
+		userRepo:  userRepo,
 		tokenRepo: tokenRepo,
 	}
 }
@@ -104,12 +105,33 @@ func (service *authService) ForgotPassword(email string) (*UserProfileToken, err
 	return &token, nil
 }
 
+func (service *authService) ResetPassword(email, password string, token string) error {
+	user, err := service.userRepo.FindByEmail(email)
+	if err != nil {
+		return err
+	}
+	err = service.ValidateToken(user, token, ForgotPasswordToken)
+	if err != nil {
+		return err
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
+	if err != nil {
+		return err
+	}
+	user.Password = string(hash)
+	err = service.userRepo.Update(user)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (service *authService) ValidateToken(user *User, tokenValue, tokenType string) error {
 	token, err := service.tokenRepo.FindUserTokenByStatus(user, tokenType)
 	if err != nil {
 		return err
 	}
-	if token.CreatedAt.Add(time.Duration(token.ExpiredIn) * time.Second).Before(time.Now()) {
+	if !token.CreatedAt.Add(time.Duration(token.ExpiredIn) * time.Second).Before(time.Now()) {
 		return errors.New("The token time is expired.")
 	}
 	if token.ProfileToken != tokenValue {

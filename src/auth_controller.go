@@ -15,6 +15,7 @@ type AuthController interface {
 	Login(w http.ResponseWriter, r *http.Request)
 	ChangePassword(w http.ResponseWriter, r *http.Request)
 	ForgotPassword(w http.ResponseWriter, r *http.Request)
+	ResetPassword(w http.ResponseWriter, r *http.Request)
 }
 
 type authController struct {
@@ -94,7 +95,26 @@ func (controller authController) ForgotPassword(w http.ResponseWriter, r *http.R
 		ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
-	data := Response{Status:Success, Message: "Please check your email"}
+	data := Response{Status: Success, Message: "Please check your email"}
+	JSON(w, http.StatusOK, data)
+}
+
+func (controller authController) ResetPassword(w http.ResponseWriter, r *http.Request) {
+	service := NewAuthService(NewUserRepository(controller.db), NewUserProfileTokenRepository(controller.db))
+	ept := EmailPasswordToken{}
+	err := json.NewDecoder(r.Body).Decode(&ept)
+	if err != nil {
+		controller.logger.Println(err.Error())
+		ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+	err = service.ResetPassword(ept.Email, ept.Password, ept.Token)
+	if err != nil {
+		controller.logger.Println(err.Error())
+		ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+	data := Response{Status: Success, Message: "Your password successfully changed."}
 	JSON(w, http.StatusOK, data)
 }
 
@@ -140,4 +160,3 @@ func (controller authController) ChangePassword(w http.ResponseWriter, r *http.R
 	}
 	JSON(w, http.StatusOK, currentUser)
 }
-
