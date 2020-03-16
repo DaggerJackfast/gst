@@ -57,6 +57,13 @@ func (controller authController) Login(w http.ResponseWriter, r *http.Request) {
 		ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
+	validate := validator.New()
+	err = validate.Struct(epf)
+	if err != nil {
+		controller.logger.Println(err.Error())
+		ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
 	user := User{
 		Email: epf.Email,
 		Password: epf.Password,
@@ -100,6 +107,14 @@ func (controller authController) ForgotPassword(w http.ResponseWriter, r *http.R
 		ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
+	// TODO: need to delete code duplications
+	validate := validator.New()
+	err = validate.Struct(email)
+	if err != nil {
+		controller.logger.Println(err.Error())
+		ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
 	token, err := service.ForgotPassword(email.Email)
 	if err != nil {
 		controller.logger.Println(err.Error())
@@ -122,6 +137,13 @@ func (controller authController) ResetPassword(w http.ResponseWriter, r *http.Re
 	service := NewAuthService(NewUserRepository(controller.db), NewUserProfileTokenRepository(controller.db))
 	ept := EmailPasswordToken{}
 	err := json.NewDecoder(r.Body).Decode(&ept)
+	if err != nil {
+		controller.logger.Println(err.Error())
+		ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+	validate := validator.New()
+	err = validate.Struct(ept)
 	if err != nil {
 		controller.logger.Println(err.Error())
 		ERROR(w, http.StatusUnprocessableEntity, err)
