@@ -14,13 +14,28 @@ import (
 	"time"
 )
 
-func CreateToken(userId uint64) (string, error) {
+func CreateTokenPair(userId uint64) (map[string]string, error) {
 	claims := jwt.MapClaims{}
 	claims["authorized"] = true
 	claims["user_id"] = userId
-	claims["exp"] = time.Now().Add(time.Hour * 1).Unix()
+	claims["exp"] = time.Now().Add(time.Second * time.Duration(ExpiredInAccessToken)).Unix()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(os.Getenv("API_SECRET")))
+	accessToken, err := token.SignedString([]byte(os.Getenv("API_SECRET")))
+	if err != nil {
+		return nil, err
+	}
+	rtClaims := jwt.MapClaims{}
+	rtClaims["user_id"] = userId
+	rtClaims["exp"] = time.Now().Add(time.Second * time.Duration(ExpiredInRefreshToken)).Unix()
+	rToken := jwt.NewWithClaims(jwt.SigningMethodHS256, rtClaims)
+	refreshToken, err := rToken.SignedString([]byte(os.Getenv("API_SECRET")))
+	if err != nil {
+		return nil, err
+	}
+	return map[string]string{
+		"access_token": accessToken,
+		"refresh_token": refreshToken,
+	}, nil
 }
 
 func TokenValid(r *http.Request) error {
@@ -92,4 +107,17 @@ func GenerateToken(n int) (string, error){
 		return "", err
 	}
 	return hex.EncodeToString(b), nil
+}
+
+func GetIp(r *http.Request) string {
+	forwarded := r.Header.Get("X-FORWARDED-FOR")
+	if forwarded != ""{
+		return forwarded
+	}
+	return r.RemoteAddr
+}
+
+func GetUserAgent(r *http.Request) string {
+	userAgent := r.Header.Get("User-Agent")
+	return userAgent
 }

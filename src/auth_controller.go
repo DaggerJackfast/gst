@@ -50,12 +50,16 @@ func (controller authController) Register(w http.ResponseWriter, r *http.Request
 
 func (controller authController) Login(w http.ResponseWriter, r *http.Request) {
 	service := NewAuthService(NewUserRepository(controller.db), NewUserProfileTokenRepository(controller.db))
-	user := User{}
-	err := json.NewDecoder(r.Body).Decode(&user)
+	epf := EmailPasswordFingerprint{}
+	err := json.NewDecoder(r.Body).Decode(&epf)
 	if err != nil {
 		controller.logger.Println(err.Error())
 		ERROR(w, http.StatusUnprocessableEntity, err)
 		return
+	}
+	user := User{
+		Email: epf.Email,
+		Password: epf.Password,
 	}
 	err = service.Login(&user)
 	if err != nil {
@@ -63,13 +67,28 @@ func (controller authController) Login(w http.ResponseWriter, r *http.Request) {
 		ERROR(w, http.StatusForbidden, err)
 		return
 	}
-	token, err := CreateToken(user.Id)
+	tokenPair, err := CreateTokenPair(user.Id)
 	if err != nil {
 		controller.logger.Println(err.Error())
 		ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
-	data := AuthUserToken{User: user, Token: token}
+	session := Session{
+		User:         &user,
+		RefreshToken: tokenPair["refresh_token"],
+		UserAgent:    GetUserAgent(r),
+		FingerPrint:  epf.FingerPrint,
+		Ip:           GetIp(r),
+		ExpiredIn:    ExpiredInRefreshToken,
+	}
+	sessionService := NewSessionService(NewSessionRepository(controller.db))
+	err = sessionService.CreateSession(&session)
+	if err != nil {
+		controller.logger.Println(err.Error())
+		ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+	data := AuthUserToken{User: user, Token: tokenPair}
 	JSON(w, http.StatusOK, data)
 }
 func (controller authController) ForgotPassword(w http.ResponseWriter, r *http.Request) {

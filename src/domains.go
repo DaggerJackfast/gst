@@ -29,13 +29,31 @@ type UserProfileToken struct {
 	UpdatedAt    time.Time
 }
 
+type Session struct {
+	Id uint64
+	User *User
+	RefreshToken string
+	UserAgent string
+	FingerPrint string
+	Ip string
+	ExpiredIn uint64
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+}
+
 type AuthUserToken struct {
 	User  User   `json:"user"`
-	Token string `json:"token"`
+	Token map[string]string `json:"token"`
 }
 
 type UserEmail struct {
 	Email string `json:"email" validate:"email,required,omitempty" structs:"required,omitempty"`
+}
+
+type EmailPasswordFingerprint struct {
+	Email    string `json:"email" validate:"required,omitempty" structs:"required,omitempty"`
+	Password string `json:"password" validate:"required,omitempty" structs:"required,omitempty"`
+	FingerPrint    string `json:"fingerprint" validate:"required,omitempty" structs:"required,omitempty"`
 }
 
 type EmailPasswordToken struct {
