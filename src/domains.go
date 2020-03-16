@@ -39,9 +39,9 @@ type UserEmail struct {
 }
 
 type EmailPasswordToken struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	Token    string `json:"token"`
+	Email    string `json:"email" validate:"required,omitempty" structs:"required,omitempty"`
+	Password string `json:"password" validate:"required,omitempty" structs:"required,omitempty"`
+	Token    string `json:"token" validate:"required,omitempty" structs:"required,omitempty"`
 }
 
 type Passwords struct {

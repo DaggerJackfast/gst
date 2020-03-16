@@ -23,7 +23,7 @@ type authController struct {
 	logger *log.Logger
 }
 
-func NewUserController(db sql.DB, logger *log.Logger) AuthController {
+func NewAuthController(db sql.DB, logger *log.Logger) AuthController {
 	return &authController{
 		db:     db,
 		logger: logger,

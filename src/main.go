@@ -96,7 +96,7 @@ func run() {
 	defer generalLogFile.Close()
 
 	var logger = log.New(generalLogFile, "General Logger:\t", log.Ldate|log.Ltime|log.Lshortfile)
-	userController := NewUserController(*db, logger)
+	userController := NewAuthController(*db, logger)
 	router := mux.NewRouter()
 	router.HandleFunc("/auth/register", SetMiddlewareJSON(userController.Register)).Methods("POST")
 	router.HandleFunc("/auth/login", SetMiddlewareJSON(userController.Login)).Methods("POST")

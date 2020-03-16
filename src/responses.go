@@ -9,9 +9,9 @@ import (
 type Data interface{}
 
 type Response struct {
-	Message string
-	Status  string
-	Data    Data
+	Message string `json:"message"`
+	Status  string `json:"status"`
+	Data    Data `json:"data,omitempty"`
 }
 
 type ResponseError struct {
