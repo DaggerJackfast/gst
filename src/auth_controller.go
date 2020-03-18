@@ -16,6 +16,7 @@ type AuthController interface {
 	ChangePassword(w http.ResponseWriter, r *http.Request)
 	ForgotPassword(w http.ResponseWriter, r *http.Request)
 	ResetPassword(w http.ResponseWriter, r *http.Request)
+	RefreshToken(w http.ResponseWriter, r *http.Request)
 }
 
 type authController struct {
@@ -200,4 +201,63 @@ func (controller authController) ChangePassword(w http.ResponseWriter, r *http.R
 		return
 	}
 	JSON(w, http.StatusOK, currentUser)
+}
+
+func (controller authController) RefreshToken(w http.ResponseWriter, r *http.Request) {
+	service := NewAuthService(NewUserRepository(controller.db), NewUserProfileTokenRepository(controller.db))
+	sessionService := NewSessionService(NewSessionRepository(controller.db))
+
+	rToken := RefreshToken{}
+	err := json.NewDecoder(r.Body).Decode(&rToken)
+	if err != nil {
+		controller.logger.Println(err.Error())
+		ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+	validate := validator.New()
+	err = validate.Struct(rToken)
+	if err != nil {
+		controller.logger.Println(err.Error())
+		ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+	userId, err := ExtractId(rToken.RefreshToken)
+	if err != nil {
+		controller.logger.Println(err.Error())
+		ERROR(w, http.StatusForbidden, err)
+		return
+	}
+	user, err := service.GetUser(userId)
+	if err != nil {
+		controller.logger.Println(err.Error())
+		ERROR(w, http.StatusForbidden, err)
+		return
+	}
+	err = service.Login(user)
+	if err != nil {
+		controller.logger.Println(err.Error())
+		ERROR(w, http.StatusForbidden, err)
+		return
+	}
+	tokenPair, err := CreateTokenPair(user.Id)
+	if err != nil {
+		controller.logger.Println(err.Error())
+		ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+	session, err := sessionService.GetSession(user, rToken.RefreshToken)
+	if err != nil {
+		controller.logger.Println(err.Error())
+		ERROR(w, http.StatusForbidden, err)
+		return
+	}
+	session.RefreshToken = tokenPair["refresh_token"]
+	err = sessionService.UpdateSession(session)
+	if err != nil {
+		controller.logger.Println(err.Error())
+		ERROR(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+	data := AuthUserToken{User: *user, Token: tokenPair}
+	JSON(w, http.StatusOK, data)
 }

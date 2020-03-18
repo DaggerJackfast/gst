@@ -4,6 +4,7 @@ type SessionService interface {
 	CreateSession(session *Session) error
 	UpdateSession(session *Session) error
 	DeleteSession(session *Session) error
+	GetSession(user *User, token string) (*Session, error)
 }
 
 type sessionService struct {
@@ -38,4 +39,12 @@ func (service *sessionService) DeleteSession(session *Session) error {
 		return err
 	}
 	return nil
+}
+
+func (service *sessionService) GetSession(user *User, token string) (*Session, error){
+	session, err := service.sessionRepo.Find(user, token)
+	if err != nil {
+		return nil, err
+	}
+	return session, nil
 }

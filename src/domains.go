@@ -46,6 +46,10 @@ type AuthUserToken struct {
 	Token map[string]string `json:"token"`
 }
 
+type RefreshToken struct {
+	RefreshToken string `json:"refresh_token" validate:"required,omitempty" structs:"required,omitempty"`
+}
+
 type UserEmail struct {
 	Email string `json:"email" validate:"email,required,omitempty" structs:"required,omitempty"`
 }

@@ -6,7 +6,7 @@ import (
 )
 
 type SessionRepository interface {
-	//Find(userId uint64) (*Session, error)
+	Find(user *User, refreshToken string) (*Session, error)
 	Update(session *Session) error
 	Store(session *Session) error
 	Delete(id uint64) error
@@ -58,4 +58,17 @@ func (repo *sessionRepository) Delete(id uint64) error {
 		return err
 	}
 	return nil
+}
+
+func (repo *sessionRepository) Find(user *User, refreshToken string) (*Session, error) {
+	row := repo.db.QueryRow("select * from sessions where refresh_token=$1 and user_id=$2", refreshToken, user.Id)
+	var session Session
+	var userId int
+	err := row.Scan(&session.Id, &userId, &session.RefreshToken, &session.UserAgent,
+		&session.FingerPrint, &session.Ip, &session.ExpiredIn,
+		&session.CreatedAt, &session.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &session, nil
 }

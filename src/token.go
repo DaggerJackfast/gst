@@ -72,6 +72,14 @@ func ExtractToken(r *http.Request) string {
 
 func ExtractTokenId(r *http.Request) (uint64, error) {
 	tokenString := ExtractToken(r)
+	userId, err := ExtractId(tokenString)
+	if err != nil {
+		return 0, nil
+	}
+	return userId, nil
+}
+
+func ExtractId(tokenString string)(uint64, error){
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected singing method %v", token.Header["alg"])
@@ -83,11 +91,11 @@ func ExtractTokenId(r *http.Request) (uint64, error) {
 	}
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if ok && token.Valid {
-		uid, err := strconv.ParseUint(fmt.Sprintf("%.0f", claims["user_id"]), 10, 64)
+		id, err := strconv.ParseUint(fmt.Sprintf("%.0f", claims["user_id"]), 10, 64)
 		if err != nil {
 			return 0, err
 		}
-		return uint64(uid), nil
+		return uint64(id), nil
 	}
 	return 0, nil
 }
