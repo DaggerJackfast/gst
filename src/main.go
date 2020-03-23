@@ -12,103 +12,75 @@ import (
 	"path/filepath"
 )
 
-func test() {
-	fmt.Println("The application is started...")
-	DbConnectionString := "user=root password=root dbname=gst sslmode=disable"
-	db, err := sql.Open("postgres", DbConnectionString)
+type Application interface {
+	Initialize(user, password, dbname, logPath string)
+	Run(addr string)
+}
+
+type App struct {
+	Router 	*mux.Router
+	Db *sql.DB
+	Logger *log.Logger
+}
+
+
+func (app *App) Initialize(user, password, dbname, logPath string){
+	fmt.Println("the application is initializing")
+	// Init log
+	absPath, err := filepath.Abs(logPath)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
+	}
+	file, err := os.OpenFile(absPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+	logger := log.New(file, "Logger:\t", log.Ldate|log.Ltime|log.Lshortfile)
+	app.Logger = logger
+
+	// Init db
+	connectionString := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable", user, password, dbname)
+	db, err := sql.Open("postgres", connectionString)
+	if err != nil {
+		app.Logger.Fatal(err)
 	}
 	defer db.Close()
-	repo := NewUserRepository(*db)
-	token_repo := NewUserProfileTokenRepository(*db)
-	users, err := repo.All()
-	if err != nil {
-		panic(err)
-	}
-	for _, u := range users {
-		fmt.Println(u.Id, u.Email, u.Username, u.Password)
-	}
-	n, err := repo.Find(1)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(n.Id, n.Email, n.Username, n.Password)
-	m, err := repo.FindByEmail("ab@mail.com")
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(m.Id, m.Email, m.Username, m.Password)
-	m, err = repo.FindByUsername("ab")
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(m.Id, m.Email, m.Username, m.Password)
-	ur := User{Email: "dd@mail.com", Username: "dd", Password: "ddddd"}
-	user, err := repo.Store(&ur)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(user.Id, user.Email, user.Username, user.Password)
-	user.Email = "dd.new@mail.com"
-	user.Username = "dd.new"
-	err = repo.Update(user)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(user.Id, user.Email, user.Username, user.Password)
-	err = repo.Delete(user.Id)
-	if err != nil {
-		panic(err)
-	}
-	us := NewAuthService(repo, token_repo)
-	usu := User{Email: "ee@mail.com", Username: "ee", Password: "qweqwe"}
-	err = us.Register(&usu)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(usu.Id, usu.Email, usu.Username, usu.Password)
-	password := "qweqwe"
-	usu.Password = password
-	status := us.IsValidPassword(&usu, password)
-	fmt.Println(status)
-	err = repo.Delete(user.Id)
-	if err != nil {
-		panic(err)
-	}
+	app.Db = db
+
+
+	// Init controllers
+	authController := NewAuthController(*app.Db, app.Logger)
+	// Init router
+	router := mux.NewRouter()
+	app.Router = router
+	router.HandleFunc("/auth/register", SetMiddlewareJSON(authController.Register)).Methods("POST")
+	router.HandleFunc("/auth/login", SetMiddlewareJSON(authController.Login)).Methods("POST")
+	router.HandleFunc("/auth/forgot-password", SetMiddlewareJSON(authController.ForgotPassword)).Methods("POST")
+	router.HandleFunc("/auth/change-password",
+		SetMiddlewareJSON(SetMiddlewareAuthentication(authController.ChangePassword))).Methods("POST")
+	router.HandleFunc("/auth/reset-password",
+		SetMiddlewareJSON(authController.ResetPassword)).Methods("POST")
+	router.HandleFunc("/auth/refresh-token",
+		SetMiddlewareJSON(authController.RefreshToken)).Methods("POST")
+	fmt.Printf("The server is started at %s \n", "http://0.0.0.0:5050")
+
+
+}
+
+func (app *App) Run(addr string) {
+	app.Logger.Fatal(http.ListenAndServe(addr, app.Router))
 }
 
 func run() {
-	fmt.Println("The server is initializing...")
-	db, err := sql.Open("postgres", "user=root password=root dbname=gst sslmode=disable")
-	if err != nil {
-		panic(err)
-	}
-	defer db.Close()
-	absPath, err := filepath.Abs("../log")
-	if err != nil {
-		panic(err)
-	}
-	generalLogFile, err := os.OpenFile(absPath+"/general.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		panic(err)
-	}
-	defer generalLogFile.Close()
-
-	var logger = log.New(generalLogFile, "General Logger:\t", log.Ldate|log.Ltime|log.Lshortfile)
-	userController := NewAuthController(*db, logger)
-	router := mux.NewRouter()
-	router.HandleFunc("/auth/register", SetMiddlewareJSON(userController.Register)).Methods("POST")
-	router.HandleFunc("/auth/login", SetMiddlewareJSON(userController.Login)).Methods("POST")
-	router.HandleFunc("/auth/forgot-password", SetMiddlewareJSON(userController.ForgotPassword)).Methods("POST")
-	router.HandleFunc("/auth/change-password",
-		SetMiddlewareJSON(SetMiddlewareAuthentication(userController.ChangePassword))).Methods("POST")
-	router.HandleFunc("/auth/reset-password",
-		SetMiddlewareJSON(userController.ResetPassword)).Methods("POST")
-	router.HandleFunc("/auth/refresh-token",
-		SetMiddlewareJSON(userController.RefreshToken)).Methods("POST")
-	fmt.Printf("The server is started at %s \n", "http://0.0.0.0:5050")
-	logger.Fatal(http.ListenAndServe(":5050", router))
+	user := os.Getenv("DATABASE_USER")
+	password := os.Getenv("DATABASE_PASSWORD")
+	dbname := os.Getenv("DATABASE_NAME")
+	logPath := os.Getenv("LOG_PATH")
+	addr := os.Getenv("RUN_ADDR")
+	app := App{}
+	app.Initialize(user, password, dbname, logPath)
+	app.Run(addr)
 }
 
 func init() {
