@@ -1,6 +1,7 @@
 package main
 
 import (
+	gstApp "github.com/DaggerJackfast/gst/src/app"
 	dotenv "github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"log"
@@ -14,7 +15,7 @@ func run() {
 	dbname := os.Getenv("DATABASE_NAME")
 	logPath := os.Getenv("LOG_PATH")
 	addr := os.Getenv("RUN_ADDR")
-	app := App{}
+	app := gstApp.Application{}
 	app.Initialize(user, password, dbname, logPath)
 	app.Run(addr)
 }

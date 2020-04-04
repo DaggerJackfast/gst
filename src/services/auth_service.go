@@ -1,38 +1,41 @@
-package main
+package services
 
 import (
 	"errors"
 	"fmt"
+	"github.com/DaggerJackfast/gst/src/domains"
+	"github.com/DaggerJackfast/gst/src/repositories"
+	gstToken "github.com/DaggerJackfast/gst/src/token"
 	"golang.org/x/crypto/bcrypt"
 	"time"
 )
 
 type AuthService interface {
-	Register(user *User) error
-	GetUser(userId uint64) (*User, error)
-	ForgotPassword(email string) (*UserProfileToken, error)
+	Register(user *domains.User) error
+	GetUser(userId uint64) (*domains.User, error)
+	ForgotPassword(email string) (*domains.UserProfileToken, error)
 	ResetPassword(email, password, token string) error
 	//Validate(user *User)
-	ValidateToken(user *User, tokenValue, tokenType string) error
-	Login(user *User) error
-	ChangePassword(user *User, password string) error
-	IsValidPassword(user *User, password string) bool
-	GetRepo() UserRepository
+	ValidateToken(user *domains.User, tokenValue, tokenType string) error
+	Login(user *domains.User) error
+	ChangePassword(user *domains.User, password string) error
+	IsValidPassword(user *domains.User, password string) bool
+	GetRepo() repositories.UserRepository
 }
 
 type authService struct {
-	userRepo  UserRepository
-	tokenRepo UserProfileTokenRepository
+	userRepo  repositories.UserRepository
+	tokenRepo repositories.UserProfileTokenRepository
 }
 
-func NewAuthService(userRepo UserRepository, tokenRepo UserProfileTokenRepository) AuthService {
+func NewAuthService(userRepo repositories.UserRepository, tokenRepo repositories.UserProfileTokenRepository) AuthService {
 	return &authService{
 		userRepo:  userRepo,
 		tokenRepo: tokenRepo,
 	}
 }
 
-func (service *authService) Register(user *User) error {
+func (service *authService) Register(user *domains.User) error {
 	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.MinCost)
 	if err != nil {
 		return err
@@ -46,7 +49,7 @@ func (service *authService) Register(user *User) error {
 	return nil
 }
 
-func (service *authService) Login(user *User) error {
+func (service *authService) Login(user *domains.User) error {
 	password := user.Password
 	us, err := service.userRepo.FindByEmail(user.Email)
 	if err != nil {
@@ -60,7 +63,7 @@ func (service *authService) Login(user *User) error {
 	return nil
 }
 
-func (service *authService) ChangePassword(user *User, password string) error {
+func (service *authService) ChangePassword(user *domains.User, password string) error {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
 	if err != nil {
 		return err
@@ -73,7 +76,7 @@ func (service *authService) ChangePassword(user *User, password string) error {
 	return nil
 }
 
-func (service *authService) IsValidPassword(user *User, password string) bool {
+func (service *authService) IsValidPassword(user *domains.User, password string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil {
 		fmt.Println(err.Error())
@@ -81,21 +84,21 @@ func (service *authService) IsValidPassword(user *User, password string) bool {
 	return err == nil
 }
 
-func (service *authService) ForgotPassword(email string) (*UserProfileToken, error) {
+func (service *authService) ForgotPassword(email string) (*domains.UserProfileToken, error) {
 	user, err := service.userRepo.FindByEmail(email)
 	if err != nil {
 		return nil, err
 	}
-	randToken, err := GenerateToken(16)
+	randToken, err := gstToken.GenerateToken(16)
 	if err != nil {
 		return nil, err
 	}
-	token := UserProfileToken{
+	token := domains.UserProfileToken{
 		User:         user,
 		ProfileToken: randToken,
-		TokenType:    ForgotPasswordToken,
+		TokenType:    domains.ForgotPasswordToken,
 		IsActive:     true,
-		ExpiredIn:    ExpiredInForgotPasswordToken,
+		ExpiredIn:    domains.ExpiredInForgotPasswordToken,
 	}
 	err = service.tokenRepo.Store(&token)
 	if err != nil {
@@ -110,7 +113,7 @@ func (service *authService) ResetPassword(email, password string, token string) 
 	if err != nil {
 		return err
 	}
-	err = service.ValidateToken(user, token, ForgotPasswordToken)
+	err = service.ValidateToken(user, token, domains.ForgotPasswordToken)
 	if err != nil {
 		return err
 	}
@@ -126,7 +129,7 @@ func (service *authService) ResetPassword(email, password string, token string) 
 	return nil
 }
 
-func (service *authService) ValidateToken(user *User, tokenValue, tokenType string) error {
+func (service *authService) ValidateToken(user *domains.User, tokenValue, tokenType string) error {
 	token, err := service.tokenRepo.FindUserTokenByStatus(user, tokenType)
 	if err != nil {
 		return err
@@ -145,7 +148,7 @@ func (service *authService) ValidateToken(user *User, tokenValue, tokenType stri
 	return nil
 }
 
-func (service *authService) GetUser(userId uint64) (*User, error) {
+func (service *authService) GetUser(userId uint64) (*domains.User, error) {
 	user, err := service.userRepo.Find(userId)
 	if err != nil {
 		return nil, err
@@ -153,6 +156,6 @@ func (service *authService) GetUser(userId uint64) (*User, error) {
 	return user, nil
 }
 
-func (service *authService) GetRepo() UserRepository {
+func (service *authService) GetRepo() repositories.UserRepository {
 	return service.userRepo
 }

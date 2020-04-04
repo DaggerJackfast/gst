@@ -1,10 +1,11 @@
-package main
+package token
 
 import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/DaggerJackfast/gst/src/domains"
 	jwt "github.com/dgrijalva/jwt-go"
 	"log"
 	"net/http"
@@ -18,7 +19,7 @@ func CreateTokenPair(userId uint64) (map[string]string, error) {
 	claims := jwt.MapClaims{}
 	claims["authorized"] = true
 	claims["user_id"] = userId
-	claims["exp"] = time.Now().Add(time.Second * time.Duration(ExpiredInAccessToken)).Unix()
+	claims["exp"] = time.Now().Add(time.Second * time.Duration(domains.ExpiredInAccessToken)).Unix()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	accessToken, err := token.SignedString([]byte(os.Getenv("API_SECRET")))
 	if err != nil {
@@ -26,7 +27,7 @@ func CreateTokenPair(userId uint64) (map[string]string, error) {
 	}
 	rtClaims := jwt.MapClaims{}
 	rtClaims["user_id"] = userId
-	rtClaims["exp"] = time.Now().Add(time.Second * time.Duration(ExpiredInRefreshToken)).Unix()
+	rtClaims["exp"] = time.Now().Add(time.Second * time.Duration(domains.ExpiredInRefreshToken)).Unix()
 	rToken := jwt.NewWithClaims(jwt.SigningMethodHS256, rtClaims)
 	refreshToken, err := rToken.SignedString([]byte(os.Getenv("API_SECRET")))
 	if err != nil {

@@ -1,14 +1,15 @@
-package main
+package repositories
 
 import (
 	"database/sql"
+	"github.com/DaggerJackfast/gst/src/domains"
 	"time"
 )
 
 type UserProfileTokenRepository interface {
-	FindUserTokenByStatus(user *User, tokenType string) (*UserProfileToken, error)
-	Store(token *UserProfileToken) error
-	Update(token *UserProfileToken) error
+	FindUserTokenByStatus(user *domains.User, tokenType string) (*domains.UserProfileToken, error)
+	Store(token *domains.UserProfileToken) error
+	Update(token *domains.UserProfileToken) error
 }
 
 type userProfileTokenRepository struct {
@@ -21,11 +22,11 @@ func NewUserProfileTokenRepository(db sql.DB) UserProfileTokenRepository {
 	}
 }
 
-func (repo *userProfileTokenRepository) FindUserTokenByStatus(user *User, tokenType string) (*UserProfileToken, error) {
+func (repo *userProfileTokenRepository) FindUserTokenByStatus(user *domains.User, tokenType string) (*domains.UserProfileToken, error) {
 	row := repo.db.QueryRow(`select * from user_profile_tokens where user_id=$1 
                                     and token_type= $2 and is_active=true order by created_at desc limit 1`,
 		user.Id, tokenType)
-	var token UserProfileToken
+	var token domains.UserProfileToken
 	var userId uint64
 	err := row.Scan(&token.Id, &userId, &token.ProfileToken, &token.TokenType, &token.IsActive, &token.ExpiredIn, &token.CreatedAt, &token.UpdatedAt)
 	if err != nil {
@@ -35,7 +36,7 @@ func (repo *userProfileTokenRepository) FindUserTokenByStatus(user *User, tokenT
 	return &token, nil
 }
 
-func (repo *userProfileTokenRepository) Store(token *UserProfileToken) error {
+func (repo *userProfileTokenRepository) Store(token *domains.UserProfileToken) error {
 	nowTime := time.Now()
 	token.UpdatedAt = nowTime
 	token.CreatedAt = nowTime
@@ -52,7 +53,7 @@ func (repo *userProfileTokenRepository) Store(token *UserProfileToken) error {
 	return nil
 }
 
-func (repo *userProfileTokenRepository) Update(token *UserProfileToken) error {
+func (repo *userProfileTokenRepository) Update(token *domains.UserProfileToken) error {
 	token.UpdatedAt = time.Now()
 	_, err := repo.db.Exec(`update user_profile_tokens set user_id=$2, profile_token=$3, token_type=$4,
 									is_active=$5, expired_in=$6, updated_at=$7 where id=$1`,

@@ -1,4 +1,4 @@
-package main
+package layers
 
 import (
 	"fmt"
@@ -25,8 +25,8 @@ func NewEmailSender(logger log.Logger) EmailSenderInterface {
 
 func (em *emailSender) Send(recipients []string, sender string, emailBody string) error {
 	if em.mode == "development" {
-		fmt.Println("The email is sent: %s", emailBody)
+		fmt.Printf("The email is sent: %s\n", emailBody)
 	}
-	em.logger.Println("Email is sent from $s to %v", sender, recipients)
+	em.logger.Printf("Email is sent from %s to %v\n", sender, recipients)
 	return nil
 }

@@ -1,10 +1,15 @@
-package main
+package controllers
 
 import (
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/DaggerJackfast/gst/src/domains"
+	"github.com/DaggerJackfast/gst/src/layers"
+	"github.com/DaggerJackfast/gst/src/repositories"
+	"github.com/DaggerJackfast/gst/src/services"
+	"github.com/DaggerJackfast/gst/src/token"
 	"github.com/go-playground/validator/v10"
 	"log"
 	"net/http"
@@ -32,8 +37,11 @@ func NewAuthController(db sql.DB, logger *log.Logger) AuthController {
 }
 
 func (controller authController) Register(w http.ResponseWriter, r *http.Request) {
-	service := NewAuthService(NewUserRepository(controller.db), NewUserProfileTokenRepository(controller.db))
-	user := User{}
+	service := services.NewAuthService(
+		repositories.NewUserRepository(controller.db),
+		repositories.NewUserProfileTokenRepository(controller.db),
+	)
+	user := domains.User{}
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		controller.logger.Println(err.Error())
@@ -50,8 +58,11 @@ func (controller authController) Register(w http.ResponseWriter, r *http.Request
 }
 
 func (controller authController) Login(w http.ResponseWriter, r *http.Request) {
-	service := NewAuthService(NewUserRepository(controller.db), NewUserProfileTokenRepository(controller.db))
-	epf := EmailPasswordFingerprint{}
+	service := services.NewAuthService(
+		repositories.NewUserRepository(controller.db),
+		repositories.NewUserProfileTokenRepository(controller.db),
+	)
+	epf := domains.EmailPasswordFingerprint{}
 	err := json.NewDecoder(r.Body).Decode(&epf)
 	if err != nil {
 		controller.logger.Println(err.Error())
@@ -65,8 +76,8 @@ func (controller authController) Login(w http.ResponseWriter, r *http.Request) {
 		ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
-	user := User{
-		Email: epf.Email,
+	user := domains.User{
+		Email:    epf.Email,
 		Password: epf.Password,
 	}
 	err = service.Login(&user)
@@ -75,33 +86,36 @@ func (controller authController) Login(w http.ResponseWriter, r *http.Request) {
 		ERROR(w, http.StatusForbidden, err)
 		return
 	}
-	tokenPair, err := CreateTokenPair(user.Id)
+	tokenPair, err := token.CreateTokenPair(user.Id)
 	if err != nil {
 		controller.logger.Println(err.Error())
 		ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
-	session := Session{
+	session := domains.Session{
 		User:         &user,
 		RefreshToken: tokenPair["refresh_token"],
-		UserAgent:    GetUserAgent(r),
+		UserAgent:    token.GetUserAgent(r),
 		FingerPrint:  epf.FingerPrint,
-		Ip:           GetIp(r),
-		ExpiredIn:    ExpiredInRefreshToken,
+		Ip:           token.GetIp(r),
+		ExpiredIn:    domains.ExpiredInRefreshToken,
 	}
-	sessionService := NewSessionService(NewSessionRepository(controller.db))
+	sessionService := services.NewSessionService(repositories.NewSessionRepository(controller.db))
 	err = sessionService.CreateSession(&session)
 	if err != nil {
 		controller.logger.Println(err.Error())
 		ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
-	data := AuthUserToken{User: user, Token: tokenPair}
+	data := domains.AuthUserToken{User: user, Token: tokenPair}
 	JSON(w, http.StatusOK, data)
 }
 func (controller authController) ForgotPassword(w http.ResponseWriter, r *http.Request) {
-	service := NewAuthService(NewUserRepository(controller.db), NewUserProfileTokenRepository(controller.db))
-	email := UserEmail{}
+	service := services.NewAuthService(
+		repositories.NewUserRepository(controller.db),
+		repositories.NewUserProfileTokenRepository(controller.db),
+	)
+	email := domains.UserEmail{}
 	err := json.NewDecoder(r.Body).Decode(&email)
 	if err != nil {
 		controller.logger.Println(err.Error())
@@ -122,7 +136,7 @@ func (controller authController) ForgotPassword(w http.ResponseWriter, r *http.R
 		ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
-	em := NewEmailSender(*controller.logger)
+	em := layers.NewEmailSender(*controller.logger)
 	recipients := []string{email.Email}
 	err = em.Send(recipients, "root@root.root", fmt.Sprintf("token: %s", token.ProfileToken))
 	if err != nil {
@@ -130,13 +144,16 @@ func (controller authController) ForgotPassword(w http.ResponseWriter, r *http.R
 		ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
-	data := Response{Status: Success, Message: "Please check your email"}
+	data := Response{Status: domains.Success, Message: "Please check your email"}
 	JSON(w, http.StatusOK, data)
 }
 
 func (controller authController) ResetPassword(w http.ResponseWriter, r *http.Request) {
-	service := NewAuthService(NewUserRepository(controller.db), NewUserProfileTokenRepository(controller.db))
-	ept := EmailPasswordToken{}
+	service := services.NewAuthService(
+		repositories.NewUserRepository(controller.db),
+		repositories.NewUserProfileTokenRepository(controller.db),
+	)
+	ept := domains.EmailPasswordToken{}
 	err := json.NewDecoder(r.Body).Decode(&ept)
 	if err != nil {
 		controller.logger.Println(err.Error())
@@ -156,13 +173,16 @@ func (controller authController) ResetPassword(w http.ResponseWriter, r *http.Re
 		ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
-	data := Response{Status: Success, Message: "Your password successfully changed."}
+	data := Response{Status: domains.Success, Message: "Your password successfully changed."}
 	JSON(w, http.StatusOK, data)
 }
 
 func (controller authController) ChangePassword(w http.ResponseWriter, r *http.Request) {
-	service := NewAuthService(NewUserRepository(controller.db), NewUserProfileTokenRepository(controller.db))
-	userId, err := ExtractTokenId(r)
+	service := services.NewAuthService(
+		repositories.NewUserRepository(controller.db),
+		repositories.NewUserProfileTokenRepository(controller.db),
+	)
+	userId, err := token.ExtractTokenId(r)
 	if err != nil {
 		controller.logger.Println(err.Error())
 		ERROR(w, http.StatusUnauthorized, err)
@@ -174,7 +194,7 @@ func (controller authController) ChangePassword(w http.ResponseWriter, r *http.R
 		ERROR(w, http.StatusNotFound, err)
 		return
 	}
-	p := Passwords{}
+	p := domains.Passwords{}
 	err = json.NewDecoder(r.Body).Decode(&p)
 	if err != nil {
 		controller.logger.Println(err.Error())
@@ -204,10 +224,13 @@ func (controller authController) ChangePassword(w http.ResponseWriter, r *http.R
 }
 
 func (controller authController) RefreshToken(w http.ResponseWriter, r *http.Request) {
-	service := NewAuthService(NewUserRepository(controller.db), NewUserProfileTokenRepository(controller.db))
-	sessionService := NewSessionService(NewSessionRepository(controller.db))
+	service := services.NewAuthService(
+		repositories.NewUserRepository(controller.db),
+		repositories.NewUserProfileTokenRepository(controller.db),
+	)
+	sessionService := services.NewSessionService(repositories.NewSessionRepository(controller.db))
 
-	rToken := RefreshToken{}
+	rToken := domains.RefreshToken{}
 	err := json.NewDecoder(r.Body).Decode(&rToken)
 	if err != nil {
 		controller.logger.Println(err.Error())
@@ -221,7 +244,7 @@ func (controller authController) RefreshToken(w http.ResponseWriter, r *http.Req
 		ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
-	userId, err := ExtractId(rToken.RefreshToken)
+	userId, err := token.ExtractId(rToken.RefreshToken)
 	if err != nil {
 		controller.logger.Println(err.Error())
 		ERROR(w, http.StatusForbidden, err)
@@ -239,7 +262,7 @@ func (controller authController) RefreshToken(w http.ResponseWriter, r *http.Req
 		ERROR(w, http.StatusForbidden, err)
 		return
 	}
-	tokenPair, err := CreateTokenPair(user.Id)
+	tokenPair, err := token.CreateTokenPair(user.Id)
 	if err != nil {
 		controller.logger.Println(err.Error())
 		ERROR(w, http.StatusUnprocessableEntity, err)
@@ -258,6 +281,6 @@ func (controller authController) RefreshToken(w http.ResponseWriter, r *http.Req
 		ERROR(w, http.StatusUnprocessableEntity, err)
 		return
 	}
-	data := AuthUserToken{User: *user, Token: tokenPair}
+	data := domains.AuthUserToken{User: *user, Token: tokenPair}
 	JSON(w, http.StatusOK, data)
 }

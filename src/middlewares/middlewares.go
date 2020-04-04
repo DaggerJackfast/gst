@@ -1,7 +1,9 @@
-package main
+package middlewares
 
 import (
 	"errors"
+	"github.com/DaggerJackfast/gst/src/controllers"
+	"github.com/DaggerJackfast/gst/src/token"
 	"net/http"
 )
 
@@ -14,9 +16,9 @@ func SetMiddlewareJSON(next http.HandlerFunc) http.HandlerFunc{
 
 func SetMiddlewareAuthentication(next http.HandlerFunc) http.HandlerFunc{
 	return func(w http.ResponseWriter, r *http.Request) {
-		err := TokenValid(r)
+		err := token.TokenValid(r)
 		if err != nil {
-			ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized. Token is not valid."))
+			controllers.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized. Token is not valid."))
 			return
 		}
 		next(w, r)

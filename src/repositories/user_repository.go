@@ -1,16 +1,17 @@
-package main
+package repositories
 
 import (
 	"database/sql"
+	"github.com/DaggerJackfast/gst/src/domains"
 )
 
 type UserRepository interface {
-	Find(id uint64) (*User, error)
-	FindByEmail(email string) (*User, error)
-	FindByUsername(username string) (*User, error)
-	All() ([]*User, error)
-	Update(user *User) error
-	Store(user *User) (*User, error)
+	Find(id uint64) (*domains.User, error)
+	FindByEmail(email string) (*domains.User, error)
+	FindByUsername(username string) (*domains.User, error)
+	All() ([]*domains.User, error)
+	Update(user *domains.User) error
+	Store(user *domains.User) (*domains.User, error)
 	Delete(id uint64) error
 }
 
@@ -24,9 +25,9 @@ func NewUserRepository(db sql.DB) UserRepository {
 	}
 }
 
-func (repo *userRepository) Find(id uint64) (*User, error) {
+func (repo *userRepository) Find(id uint64) (*domains.User, error) {
 	row := repo.db.QueryRow("select * from users where id=$1", id)
-	var user User
+	var user domains.User
 	err := row.Scan(&user.Id, &user.Email, &user.Username, &user.Password)
 	if err != nil {
 		return nil, err
@@ -34,9 +35,9 @@ func (repo *userRepository) Find(id uint64) (*User, error) {
 	return &user, nil
 }
 
-func (repo *userRepository) FindByEmail(email string) (*User, error) {
+func (repo *userRepository) FindByEmail(email string) (*domains.User, error) {
 	row := repo.db.QueryRow("select * from users where email=$1", email)
-	var user User
+	var user domains.User
 	err := row.Scan(&user.Id, &user.Email, &user.Username, &user.Password)
 	if err != nil {
 		return nil, err
@@ -44,9 +45,9 @@ func (repo *userRepository) FindByEmail(email string) (*User, error) {
 	return &user, nil
 }
 
-func (repo *userRepository) FindByUsername(username string) (*User, error) {
+func (repo *userRepository) FindByUsername(username string) (*domains.User, error) {
 	row := repo.db.QueryRow("select * from users where username=$1", username)
-	var user User
+	var user domains.User
 	err := row.Scan(&user.Id, &user.Email, &user.Username, &user.Password)
 	if err != nil {
 		return nil, err
@@ -54,15 +55,15 @@ func (repo *userRepository) FindByUsername(username string) (*User, error) {
 	return &user, nil
 }
 
-func (repo *userRepository) All() ([]*User, error) {
+func (repo *userRepository) All() ([]*domains.User, error) {
 	rows, err := repo.db.Query("select * from users order by email;")
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var users []*User
+	var users []*domains.User
 	for rows.Next() {
-		u := User{}
+		u := domains.User{}
 		err := rows.Scan(&u.Id, &u.Email, &u.Username, &u.Password)
 		if err != nil {
 			continue
@@ -72,7 +73,7 @@ func (repo *userRepository) All() ([]*User, error) {
 	return users, nil
 }
 
-func (repo *userRepository) Update(user *User) error {
+func (repo *userRepository) Update(user *domains.User) error {
 	_, err := repo.db.Exec("update users set email=$2, username=$3, password=$4 where id=$1",
 		user.Id, user.Email, user.Username, user.Password)
 	if err != nil {
@@ -81,7 +82,7 @@ func (repo *userRepository) Update(user *User) error {
 	return nil
 }
 
-func (repo *userRepository) Store(user *User) (*User, error) {
+func (repo *userRepository) Store(user *domains.User) (*domains.User, error) {
 	err := repo.db.QueryRow("insert into users (email, username, password) values($1, $2, $3) returning  id",
 		user.Email, user.Username, user.Password).Scan(&user.Id)
 	if err != nil {
