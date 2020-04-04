@@ -70,6 +70,13 @@ func (app *Application) InitLog(logPath string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	absDirPath := filepath.Dir(absPath)
+	if _, err := os.Stat(absDirPath); os.IsNotExist(err) {
+		err = os.MkdirAll(absDirPath, 0700)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 	file, err := os.OpenFile(absPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatal(err)
