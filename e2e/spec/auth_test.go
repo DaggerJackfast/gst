@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	gstApp "github.com/DaggerJackfast/gst/src/app"
+	"github.com/DaggerJackfast/gst/src/domains"
 	"github.com/DaggerJackfast/gst/src/migrations"
 	_ "github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
@@ -14,6 +15,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"path"
 )
 
 func initTestDb() (*sql.DB, *dockertest.Pool, *dockertest.Resource) {
@@ -62,7 +64,8 @@ var _ = Describe("Auth", func() {
 	)
 	BeforeEach(func() {
 		app = gstApp.Application{}
-		app.InitLog("../../log/tests.log")
+		logPath := path.Join(domains.RootPath, "log/tests.log")
+		app.InitLog(logPath)
 		app.Db, pool, resource = initTestDb()
 		migrations.Migrate(app.Db)
 		app.InitRoutes()
