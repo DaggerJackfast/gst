@@ -7,10 +7,12 @@ import (
 	"log"
 	"path"
 	"path/filepath"
+
+	_ "github.com/lib/pq"
 )
 
 func Migrate(db *sql.DB) {
-	sqlFile := path.Join(domains.RootPath, "src/migrations/start.sql")
+	sqlFile := GetSqlFile()
 	absPath, err := filepath.Abs(sqlFile)
 	if err != nil {
 		log.Fatal(err)
@@ -24,4 +26,9 @@ func Migrate(db *sql.DB) {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func GetSqlFile() string {
+	sqlFile := path.Join(domains.RootPath, "src/migrations/start.sql")
+	return sqlFile
 }
