@@ -25,11 +25,11 @@ type AuthController interface {
 }
 
 type authController struct {
-	db     sql.DB
+	db     *sql.DB
 	logger *log.Logger
 }
 
-func NewAuthController(db sql.DB, logger *log.Logger) AuthController {
+func NewAuthController(db *sql.DB, logger *log.Logger) AuthController {
 	return &authController{
 		db:     db,
 		logger: logger,

@@ -41,7 +41,7 @@ func (app *Application) Initialize(user, password, dbname, logPath string) {
 
 func (app *Application) InitRoutes() {
 	// Init controllers
-	authController := controllers.NewAuthController(*app.Db, app.Logger)
+	authController := controllers.NewAuthController(app.Db, app.Logger)
 
 	router := mux.NewRouter()
 	app.Router = router

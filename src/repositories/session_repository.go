@@ -14,10 +14,10 @@ type SessionRepository interface {
 }
 
 type sessionRepository struct {
-	db sql.DB
+	db *sql.DB
 }
 
-func NewSessionRepository(db sql.DB) SessionRepository {
+func NewSessionRepository(db *sql.DB) SessionRepository {
 	return &sessionRepository{
 		db: db,
 	}

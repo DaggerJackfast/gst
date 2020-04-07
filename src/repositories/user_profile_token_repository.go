@@ -13,10 +13,10 @@ type UserProfileTokenRepository interface {
 }
 
 type userProfileTokenRepository struct {
-	db sql.DB
+	db *sql.DB
 }
 
-func NewUserProfileTokenRepository(db sql.DB) UserProfileTokenRepository {
+func NewUserProfileTokenRepository(db *sql.DB) UserProfileTokenRepository {
 	return &userProfileTokenRepository{
 		db: db,
 	}
