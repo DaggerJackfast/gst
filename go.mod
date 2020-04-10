@@ -14,6 +14,8 @@ require (
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/go-playground/validator/v10 v10.2.0
 	github.com/go-sql-driver/mysql v1.5.0 // indirect
+	github.com/go-testfixtures/testfixtures v2.5.1+incompatible
+	github.com/go-testfixtures/testfixtures/v3 v3.1.1
 	github.com/google/go-cmp v0.3.0 // indirect
 	github.com/gorilla/mux v1.7.4
 	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
@@ -36,6 +38,5 @@ require (
 	golang.org/x/sys v0.0.0-20200331124033-c3d80250170d // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/khaiql/dbcleaner.v2 v2.3.0
-	gopkg.in/yaml.v2 v2.2.7 // indirect
 	gotest.tools v2.2.0+incompatible // indirect
 )

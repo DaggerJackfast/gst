@@ -8,14 +8,13 @@ type User struct {
 	Id       uint64 `json:"id"`
 	Email    string `json:"email"`
 	Username string `json:"username"`
-	Password string `json:"password"`
+	Password string `json:"-"`
 }
 
 func (user *User) Modify(us User) {
 	user.Id = us.Id
 	user.Email = us.Email
 	user.Username = us.Username
-	user.Password = us.Password
 }
 
 type UserProfileToken struct {

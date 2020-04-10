@@ -1,0 +1,14 @@
+- id: 1
+  email: first_user@test.test
+  username: first_user
+  password: {{GenPasswordHash "first_user_password"}}
+
+- id: 2
+  email: second_user@test.test
+  username: second_user
+  password: {{GenPasswordHash "second_user_password"}}
+
+- id: 3
+  email: third_user@test.test
+  username: third_user
+  password: {{GenPasswordHash "third_user_password"}}

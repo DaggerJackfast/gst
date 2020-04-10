@@ -1,0 +1,20 @@
+- id: 1
+  user_id: 1
+  refresh_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1ODY2MTgzODAsInVzZXJfaWQiOjI0fQ.k-lDvgd24mPwsTuhWQ14zUJpp2McKqpobNaS7FFfihY"
+  user_agent: "PostmanRuntime/7.24.0"
+  fingerprint: testfingerprint
+  ip: 127.0.0.1
+  expired_in: 604800
+  created_at: "2020-04-04 21:26:33"
+  updated_at: "2020-04-04 21:26:33"
+
+- id: 2
+  user_id: 2
+  refresh_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1ODY2MTgzODAsInVzZXJfaWQiOjI0fQ.k-lDvgd24mPwsTuhWQ14zUJpp2McKqpobNaS7FFfihY"
+  user_agent: "PostmanRuntime/7.24.0"
+  fingerprint: testfingerprint
+  ip: 127.0.0.1
+  expired_in: 604800
+  created_at: "2020-04-04 21:26:33"
+  updated_at: "2020-04-04 21:26:33"
+

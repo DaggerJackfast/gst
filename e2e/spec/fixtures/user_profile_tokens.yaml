@@ -1,0 +1,17 @@
+- id: 1
+  user_id: 1
+  profile_token: fc5c078c673b9799e9a9b6a95531d77c
+  token_type: forgot_password_token
+  is_active: true
+  expired_in: 14400
+  created_at: "2020-03-13 19:31:19"
+  updated_at: "2020-03-13 19:31:19"
+
+- id: 2
+  user_id: 2
+  profile_token: dc83166d344293107aa1426b8bdbdaec
+  token_type: forgot_password_token
+  is_active: true
+  expired_in: 14400
+  created_at: "2020-03-13 19:31:19"
+  updated_at: "2020-03-13 19:31:19"
