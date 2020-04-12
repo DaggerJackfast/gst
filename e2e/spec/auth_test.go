@@ -7,6 +7,7 @@ import (
 	_ "github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"io/ioutil"
 	"log"
 	"net/http"
 )
@@ -69,6 +70,27 @@ var _ = Describe("Auth", func() {
 			url := fmt.Sprintf("%s/auth/login", Server.URL)
 			response, err := Client.Post(url, "application/json", bytes.NewBuffer(data))
 			Expect(err).ToNot(HaveOccurred())
+			Expect(response.StatusCode).To(Equal(http.StatusOK))
+		})
+	})
+	Context("User forgot password", func(){
+		It("User recovery password successfully", func(){
+			userEmail := map[string]string{
+				"email": "first_user@test.test",
+			}
+			data, err := json.Marshal(userEmail)
+			if err != nil {
+				log.Printf("json marshal error: %s", err)
+			}
+			url := fmt.Sprintf("%s/auth/forgot-password", Server.URL)
+			response, err := Client.Post(url, "application/json", bytes.NewBuffer(data))
+			Expect(err).ToNot(HaveOccurred())
+			bodyBytes, err := ioutil.ReadAll(response.Body)
+			if err != nil {
+				log.Fatal(err)
+			}
+			bodyString := string(bodyBytes)
+			fmt.Println("response data", bodyString)
 			Expect(response.StatusCode).To(Equal(http.StatusOK))
 		})
 	})
