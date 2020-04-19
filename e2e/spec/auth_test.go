@@ -144,6 +144,9 @@ var _ = Describe("Auth", func() {
 	})
 
 	Context("User forgot password", func() {
+		BeforeEach(func(){
+			url = fmt.Sprintf("%s/auth/forgot-password", Server.URL)
+		})
 		It("User recovery password successfully", func() {
 			userEmail := map[string]string{
 				"email": "first_user@test.test",
@@ -152,12 +155,53 @@ var _ = Describe("Auth", func() {
 			if err != nil {
 				log.Printf("json marshal error: %s", err)
 			}
-			url := fmt.Sprintf("%s/auth/forgot-password", Server.URL)
 			response, err := Client.Post(url, contentType, bytes.NewBuffer(data))
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(response.StatusCode).To(Equal(http.StatusOK))
 		})
+		It("User recovery password failed with json decode error", func(){
+			response, err := Client.Post(url, contentType, bytes.NewBuffer([]byte("")))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(response.StatusCode).To(Equal(http.StatusUnprocessableEntity))
+			expectedBody := map[string]string{
+				"error": "EOF",
+			}
+			Expect(test_utils.GetResponseBodyJson(response)).To(Equal(expectedBody))
+		})
+		It("User login failed with json validate error", func() {
+			userEmail := map[string]string{
+				"email": "first_user.test.test",
+			}
+			data, err := json.Marshal(userEmail)
+			if err != nil {
+				log.Printf("json marshal error: %s", err)
+			}
+			response, err := Client.Post(url, contentType, bytes.NewBuffer(data))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(response.StatusCode).To(Equal(http.StatusUnprocessableEntity))
+			expectedBody := map[string]string{
+				"error": "Key: 'UserEmail.Email' Error:Field validation for 'Email' failed on the 'email' tag",
+			}
+			Expect(test_utils.GetResponseBodyJson(response)).To(Equal(expectedBody))
+		})
+		It("User login failed with email not found", func() {
+			userEmail := map[string]string{
+				"email": "unknown@test.test",
+			}
+			data, err := json.Marshal(userEmail)
+			if err != nil {
+				log.Printf("json marshal error: %s", err)
+			}
+			response, err := Client.Post(url, contentType, bytes.NewBuffer(data))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(response.StatusCode).To(Equal(http.StatusUnprocessableEntity))
+			expectedBody := map[string]string{
+				"error": "sql: no rows in result set",
+			}
+			Expect(test_utils.GetResponseBodyJson(response)).To(Equal(expectedBody))
+		})
+
 	})
 
 })
