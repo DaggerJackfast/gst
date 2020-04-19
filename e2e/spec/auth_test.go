@@ -23,11 +23,16 @@ var _ = Describe("Auth", func() {
 		}
 
 	})
+
 	AfterEach(func() {
 		tables := []string{"sessions", "user_profile_tokens", "users"}
 		Cleaner.Clean(tables...)
 	})
+
 	Context("User registration", func() {
+		BeforeEach(func() {
+			url = fmt.Sprintf("%s/auth/register", Server.URL)
+		})
 		It("User can register", func() {
 			user := map[string]string{
 				"username": "test_user",
@@ -38,12 +43,20 @@ var _ = Describe("Auth", func() {
 			if err != nil {
 				log.Printf("json marshal error: %s", err)
 			}
-			url := fmt.Sprintf("%s/auth/register", Server.URL)
 			response, err := Client.Post(url, contentType, bytes.NewBuffer(data))
 			Expect(err).ToNot(HaveOccurred())
 			Expect(response.StatusCode).To(Equal(http.StatusOK))
 		})
-		It("User can't register with exists email", func() {
+		It("User register failed with json decode error", func() {
+			response, err := Client.Post(url, contentType, bytes.NewBuffer([]byte("")))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(response.StatusCode).To(Equal(http.StatusUnprocessableEntity))
+			expectedBody := map[string]string{
+				"error": "EOF",
+			}
+			Expect(test_utils.GetResponseBodyJson(response)).To(Equal(expectedBody))
+		})
+		It("User register failed with unique email error", func() {
 			user := map[string]string{
 				"username": "first_user",
 				"email":    "first_user@test.test",
@@ -53,12 +66,17 @@ var _ = Describe("Auth", func() {
 			if err != nil {
 				log.Printf("json marshal error: %s", err)
 			}
-			url := fmt.Sprintf("%s/auth/register", Server.URL)
+
 			response, err := Client.Post(url, contentType, bytes.NewBuffer(data))
 			Expect(err).ToNot(HaveOccurred())
 			Expect(response.StatusCode).To(Equal(http.StatusUnprocessableEntity))
+			expectedBody := map[string]string{
+				"error": `pq: duplicate key value violates unique constraint "users_email_key"`,
+			}
+			Expect(test_utils.GetResponseBodyJson(response)).To(Equal(expectedBody))
 		})
 	})
+
 	Context("User login", func() {
 		BeforeEach(func() {
 			url = fmt.Sprintf("%s/auth/login", Server.URL)
@@ -87,7 +105,7 @@ var _ = Describe("Auth", func() {
 			}
 			Expect(test_utils.GetResponseBodyJson(response)).To(Equal(expectedBody))
 		})
-		It("User login failed with json validate error", func(){
+		It("User login failed with json validate error", func() {
 			login := map[string]string{
 				"email":       "first_user.test.test",
 				"password":    "",
@@ -105,7 +123,7 @@ var _ = Describe("Auth", func() {
 			}
 			Expect(test_utils.GetResponseBodyJson(response)).To(Equal(expectedBody))
 		})
-		It("User login failed with json validate error", func(){
+		It("User login failed with json validate error", func() {
 			login := map[string]string{
 				"email":       "first_user@test.test",
 				"password":    "wrong password",
@@ -124,6 +142,7 @@ var _ = Describe("Auth", func() {
 			Expect(test_utils.GetResponseBodyJson(response)).To(Equal(expectedBody))
 		})
 	})
+
 	Context("User forgot password", func() {
 		It("User recovery password successfully", func() {
 			userEmail := map[string]string{
