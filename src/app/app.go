@@ -15,6 +15,7 @@ import (
 
 type ApplicationInterface interface {
 	Initialize(user, password, dbname, logPath string)
+	checkVariables()
 	InitLog(logPath string)
 	InitDb(user string, password string, dbname string)
 	InitRoutes()
@@ -32,11 +33,23 @@ func (app *Application) Initialize(user, password, dbname, logPath string) {
 	fmt.Println("The application path: ", domains.RootPath)
 	// Init log
 	app.InitLog(logPath)
-
+	//check environment variables
+	app.checkVariables()
 	// Init db
 	app.InitDb(user, password, dbname)
 	// Init router
 	app.InitRoutes()
+}
+
+func (app *Application) checkVariables(){
+	var exists bool
+	checkedEnvs := []string{"API_SECRET", "RUN_MODE"}
+	for _, env := range checkedEnvs {
+		_, exists = os.LookupEnv(env)
+		if !exists {
+			app.Logger.Fatalf("Enviroment variable '%s' is not set", env)
+		}
+	}
 }
 
 func (app *Application) InitRoutes() {
@@ -45,15 +58,14 @@ func (app *Application) InitRoutes() {
 
 	router := mux.NewRouter()
 	app.Router = router
-	router.HandleFunc("/auth/register", middlewares.SetMiddlewareJSON(authController.Register)).Methods("POST")
-	router.HandleFunc("/auth/login", middlewares.SetMiddlewareJSON(authController.Login)).Methods("POST")
-	router.HandleFunc("/auth/forgot-password", middlewares.SetMiddlewareJSON(authController.ForgotPassword)).Methods("POST")
-	router.HandleFunc("/auth/change-password",
-		middlewares.SetMiddlewareJSON(middlewares.SetMiddlewareAuthentication(authController.ChangePassword))).Methods("POST")
-	router.HandleFunc("/auth/reset-password",
-		middlewares.SetMiddlewareJSON(authController.ResetPassword)).Methods("POST")
-	router.HandleFunc("/auth/refresh-token",
-		middlewares.SetMiddlewareJSON(authController.RefreshToken)).Methods("POST")
+	auth := router.PathPrefix("/auth").Subrouter()
+	auth.Use(middlewares.JsonMiddleware)
+	auth.HandleFunc("/register", authController.Register).Methods("POST")
+	auth.HandleFunc("/login", authController.Login).Methods("POST")
+	auth.HandleFunc("/forgot-password", authController.ForgotPassword).Methods("POST")
+	auth.HandleFunc("/reset-password", authController.ResetPassword).Methods("POST")
+	auth.HandleFunc("/refresh-token", authController.RefreshToken).Methods("POST")
+	auth.HandleFunc("/change-password", middlewares.SetMiddlewareAuthentication(authController.ChangePassword)).Methods("POST")
 }
 
 func (app *Application) InitDb(user string, password string, dbname string) {
