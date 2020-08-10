@@ -144,7 +144,7 @@ var _ = Describe("Auth", func() {
 	})
 
 	Context("User forgot password", func() {
-		BeforeEach(func(){
+		BeforeEach(func() {
 			url = fmt.Sprintf("%s/auth/forgot-password", Server.URL)
 		})
 		It("User recovery password successfully", func() {
@@ -160,7 +160,7 @@ var _ = Describe("Auth", func() {
 
 			Expect(response.StatusCode).To(Equal(http.StatusOK))
 		})
-		It("User recovery password failed with json decode error", func(){
+		It("User recovery password failed with json decode error", func() {
 			response, err := Client.Post(url, contentType, bytes.NewBuffer([]byte("")))
 			Expect(err).ToNot(HaveOccurred())
 			Expect(response.StatusCode).To(Equal(http.StatusUnprocessableEntity))
@@ -203,15 +203,15 @@ var _ = Describe("Auth", func() {
 		})
 
 	})
-	Context("User reset password", func(){
-		BeforeEach(func(){
+	Context("User reset password", func() {
+		BeforeEach(func() {
 			url = fmt.Sprintf("%s/auth/reset-password", Server.URL)
 		})
-		It("User reset password successfully", func(){
+		It("User reset password successfully", func() {
 			emailPassword := map[string]string{
-				"email": "first_user@test.test",
+				"email":    "first_user@test.test",
 				"password": "first_user_password",
-				"token": "fc5c078c673b9799e9a9b6a95531d77c",
+				"token":    "fc5c078c673b9799e9a9b6a95531d77c",
 			}
 			data, err := json.Marshal(emailPassword)
 			if err != nil {
@@ -221,12 +221,12 @@ var _ = Describe("Auth", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(response.StatusCode).To(Equal(http.StatusOK))
 			expectedBody := map[string]string{
-				"status": "success",
+				"status":  "success",
 				"message": "Your password successfully changed.",
 			}
 			Expect(test_utils.GetResponseBodyJson(response)).To(Equal(expectedBody))
 		})
-		It("User reset password failed with json decode error", func(){
+		It("User reset password failed with json decode error", func() {
 			response, err := Client.Post(url, contentType, bytes.NewBuffer([]byte("")))
 			Expect(err).ToNot(HaveOccurred())
 			Expect(response.StatusCode).To(Equal(http.StatusUnprocessableEntity))
@@ -237,9 +237,9 @@ var _ = Describe("Auth", func() {
 		})
 		It("User reset failed with json validate error", func() {
 			emailPassword := map[string]string{
-				"email": "first_user.test.test",
+				"email":    "first_user.test.test",
 				"password": "",
-				"token": "",
+				"token":    "",
 			}
 			data, err := json.Marshal(emailPassword)
 			if err != nil {
@@ -255,9 +255,9 @@ var _ = Describe("Auth", func() {
 		})
 		It("User reset failed with email not found error", func() {
 			emailPassword := map[string]string{
-				"email": "wrong@test.test",
+				"email":    "wrong@test.test",
 				"password": "first_user_password",
-				"token": "fc5c078c673b9799e9a9b6a95531d77c",
+				"token":    "fc5c078c673b9799e9a9b6a95531d77c",
 			}
 			data, err := json.Marshal(emailPassword)
 			if err != nil {
@@ -273,9 +273,9 @@ var _ = Describe("Auth", func() {
 		})
 		It("User reset failed with token validate error", func() {
 			emailPassword := map[string]string{
-				"email": "first_user@test.test",
+				"email":    "first_user@test.test",
 				"password": "first_user_password",
-				"token": "wrong_token",
+				"token":    "wrong_token",
 			}
 			data, err := json.Marshal(emailPassword)
 			if err != nil {
@@ -290,5 +290,33 @@ var _ = Describe("Auth", func() {
 			Expect(test_utils.GetResponseBodyJson(response)).To(Equal(expectedBody))
 		})
 	})
+	//Context("User change password", func() {
+	//	BeforeEach(func() {
+	//		url = fmt.Sprintf("%s/auth/change-password", Server.URL)
+	//	})
+	//	It("User change password successfully", func() {
+	//		guard := monkey.Patch(bcrypt.CompareHashAndPassword, func([]uint8, []uint8) error {
+	//			fmt.Println("aaaaaaaa")
+	//			return nil
+	//		})
+	//		defer guard.Unpatch()
+	//		passwords := map[string]string{
+	//			"old_password": "first_user_password",
+	//			"new_password": "first_user_new_password",
+	//		}
+	//		data, err := json.Marshal(passwords)
+	//		if err != nil {
+	//			log.Printf("json marshal error: %s", err)
+	//		}
+	//		request, err := http.NewRequest("POST", url, bytes.NewBuffer(data))
+	//		token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1ODY2MTgzODAsInVzZXJfaWQiOjI0fQ.k-lDvgd24mPwsTuhWQ14zUJpp2McKqpobNaS7FFfihY"
+	//		authHeader := fmt.Sprintf("Bearer %s", token)
+	//		request.Header.Add("Authorization", authHeader)
+	//		response, err := Client.Do(request)
+	//		fmt.Println("RESPONSE: ", test_utils.GetResponseBodyString(response))
+	//		Expect(err).ToNot(HaveOccurred())
+	//		Expect(response.StatusCode).To(Equal(http.StatusOK))
+	//	})
+	//})
 
 })

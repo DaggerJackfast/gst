@@ -1,14 +1,14 @@
 - id: 1
   email: first_user@test.test
   username: first_user
-  password: {{GenPasswordHash "first_user_password"}}
+  password: $2a$04$czu3oOTOPmxu4mVvVZhYNO/jF3SeSAyGpvJWeMZSJ68ww529ftc6. #first_user_password
 
 - id: 2
   email: second_user@test.test
   username: second_user
-  password: {{GenPasswordHash "second_user_password"}}
+  password: $2a$04$u3CNKytkkwFq2p2Cac2ZeuRV7jjYowOG3NnphlfWRKCrDC3qqHHKS #second_user_password
 
 - id: 3
   email: third_user@test.test
   username: third_user
-  password: {{GenPasswordHash "third_user_password"}}
+  password: $2a$04$8HTBhN0ZOkHyDigBDL7/5eoav5t1Vh7oJsIZqBgfsgjbe7LPav8MO #third_user_password

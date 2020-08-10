@@ -3,12 +3,10 @@ package test_utils
 import (
 	"database/sql"
 	"github.com/go-testfixtures/testfixtures/v3"
-	"golang.org/x/crypto/bcrypt"
 	"io/ioutil"
 	"log"
 	"path"
 	"regexp"
-	"text/template"
 )
 
 type FixtureLoaderBuilder interface {
@@ -16,17 +14,10 @@ type FixtureLoaderBuilder interface {
 	getFilesInDirectory(fixturesDirectory string) []string
 }
 
-type fixtureLoaderBuilder struct {
-	fixtureFunctions template.FuncMap
-}
+type fixtureLoaderBuilder struct{}
 
 func NewFixtureLoaderBuilder() FixtureLoaderBuilder {
-	fixtureFunctions := template.FuncMap{
-		"GenPasswordHash": generatePasswordHash,
-	}
-	return &fixtureLoaderBuilder{
-		fixtureFunctions: fixtureFunctions,
-	}
+	return &fixtureLoaderBuilder{}
 }
 
 func (builder *fixtureLoaderBuilder) Build(db *sql.DB, fixturesDirectory string) *testfixtures.Loader {
@@ -35,7 +26,6 @@ func (builder *fixtureLoaderBuilder) Build(db *sql.DB, fixturesDirectory string)
 		testfixtures.Database(db),
 		testfixtures.Dialect("postgresql"),
 		testfixtures.Template(),
-		testfixtures.TemplateFuncs(builder.fixtureFunctions),
 		testfixtures.Files(files...),
 	)
 	if err != nil {
@@ -61,14 +51,4 @@ func (builder *fixtureLoaderBuilder) getFilesInDirectory(fixturesDirectory strin
 		}
 	}
 	return files
-}
-
-func generatePasswordHash(password string) string {
-	passwordBytes := []byte(password)
-	hash, err := bcrypt.GenerateFromPassword(passwordBytes, bcrypt.MinCost)
-	if err != nil {
-		log.Fatalf("Cannot generate password hash: %s", hash)
-	}
-	hashString := string(hash)
-	return hashString
 }

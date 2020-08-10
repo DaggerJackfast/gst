@@ -14,7 +14,6 @@ require (
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/go-playground/validator/v10 v10.2.0
 	github.com/go-sql-driver/mysql v1.5.0 // indirect
-	github.com/go-testfixtures/testfixtures v2.5.1+incompatible
 	github.com/go-testfixtures/testfixtures/v3 v3.1.1
 	github.com/google/go-cmp v0.3.0 // indirect
 	github.com/gorilla/mux v1.7.4
