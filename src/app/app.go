@@ -58,14 +58,18 @@ func (app *Application) InitRoutes() {
 
 	router := mux.NewRouter()
 	app.Router = router
+	router.Use(middlewares.JsonMiddleware)
 	auth := router.PathPrefix("/auth").Subrouter()
-	auth.Use(middlewares.JsonMiddleware)
 	auth.HandleFunc("/register", authController.Register).Methods("POST")
 	auth.HandleFunc("/login", authController.Login).Methods("POST")
 	auth.HandleFunc("/forgot-password", authController.ForgotPassword).Methods("POST")
 	auth.HandleFunc("/reset-password", authController.ResetPassword).Methods("POST")
 	auth.HandleFunc("/refresh-token", authController.RefreshToken).Methods("POST")
-	auth.HandleFunc("/change-password", middlewares.SetMiddlewareAuthentication(authController.ChangePassword)).Methods("POST")
+
+	profile := router.PathPrefix("/profile").Subrouter()
+	profile.Use(middlewares.AuthenticationMiddleware)
+	profile.HandleFunc("/change-password", authController.ChangePassword).Methods("POST")
+
 }
 
 func (app *Application) InitDb(user string, password string, dbname string) {

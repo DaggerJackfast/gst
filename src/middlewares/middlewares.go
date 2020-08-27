@@ -14,13 +14,13 @@ func JsonMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func SetMiddlewareAuthentication(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func AuthenticationMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){
 		err := token.TokenValid(r)
 		if err != nil {
 			controllers.ERROR(w, http.StatusUnauthorized, errors.New("Unauthorized. Token is not valid."))
 			return
 		}
-		next(w, r)
-	}
+		next.ServeHTTP(w, r)
+	})
 }
