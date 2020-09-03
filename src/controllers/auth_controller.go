@@ -22,6 +22,7 @@ type AuthController interface {
 	ForgotPassword(w http.ResponseWriter, r *http.Request)
 	ResetPassword(w http.ResponseWriter, r *http.Request)
 	RefreshToken(w http.ResponseWriter, r *http.Request)
+	handleError(w http.ResponseWriter, status int, err error)
 }
 
 type authController struct {
@@ -44,14 +45,12 @@ func (controller authController) Register(w http.ResponseWriter, r *http.Request
 	user := domains.User{}
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
-		controller.logger.Println(err.Error())
-		ERROR(w, http.StatusUnprocessableEntity, err)
+		controller.handleError(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 	err = service.Register(&user)
 	if err != nil {
-		controller.logger.Println(err.Error())
-		ERROR(w, http.StatusUnprocessableEntity, err)
+		controller.handleError(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 	JSON(w, http.StatusOK, user)
@@ -65,15 +64,13 @@ func (controller authController) Login(w http.ResponseWriter, r *http.Request) {
 	epf := domains.EmailPasswordFingerprint{}
 	err := json.NewDecoder(r.Body).Decode(&epf)
 	if err != nil {
-		controller.logger.Println(err.Error())
-		ERROR(w, http.StatusUnprocessableEntity, err)
+		controller.handleError(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 	validate := validator.New()
 	err = validate.Struct(epf)
 	if err != nil {
-		controller.logger.Println(err.Error())
-		ERROR(w, http.StatusUnprocessableEntity, err)
+		controller.handleError(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 	user := domains.User{
@@ -82,14 +79,12 @@ func (controller authController) Login(w http.ResponseWriter, r *http.Request) {
 	}
 	err = service.Login(&user)
 	if err != nil {
-		controller.logger.Println(err.Error())
-		ERROR(w, http.StatusForbidden, err)
+		controller.handleError(w, http.StatusForbidden, err)
 		return
 	}
 	tokenPair, err := token.CreateTokenPair(user.Id)
 	if err != nil {
-		controller.logger.Println(err.Error())
-		ERROR(w, http.StatusUnprocessableEntity, err)
+		controller.handleError(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 	session := domains.Session{
@@ -103,8 +98,7 @@ func (controller authController) Login(w http.ResponseWriter, r *http.Request) {
 	sessionService := services.NewSessionService(repositories.NewSessionRepository(controller.db))
 	err = sessionService.CreateSession(&session)
 	if err != nil {
-		controller.logger.Println(err.Error())
-		ERROR(w, http.StatusUnprocessableEntity, err)
+		controller.handleError(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 	data := domains.AuthUserToken{User: user, Token: tokenPair}
@@ -118,30 +112,26 @@ func (controller authController) ForgotPassword(w http.ResponseWriter, r *http.R
 	email := domains.UserEmail{}
 	err := json.NewDecoder(r.Body).Decode(&email)
 	if err != nil {
-		controller.logger.Println(err.Error())
-		ERROR(w, http.StatusUnprocessableEntity, err)
+		controller.handleError(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 	// TODO: need to delete code duplications
 	validate := validator.New()
 	err = validate.Struct(email)
 	if err != nil {
-		controller.logger.Println(err.Error())
-		ERROR(w, http.StatusUnprocessableEntity, err)
+		controller.handleError(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 	token, err := service.ForgotPassword(email.Email)
 	if err != nil {
-		controller.logger.Println(err.Error())
-		ERROR(w, http.StatusUnprocessableEntity, err)
+		controller.handleError(w, http.StatusUnprocessableEntity, err)
 		return
 	}
-	em := layers.NewEmailSender(*controller.logger)
+	em := layers.NewEmailSender(controller.logger)
 	recipients := []string{email.Email}
 	err = em.Send(recipients, "root@root.root", fmt.Sprintf("token: %s", token.ProfileToken))
 	if err != nil {
-		controller.logger.Println(err.Error())
-		ERROR(w, http.StatusUnprocessableEntity, err)
+		controller.handleError(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 	data := Response{Status: domains.Success, Message: "Please check your email"}
@@ -156,21 +146,18 @@ func (controller authController) ResetPassword(w http.ResponseWriter, r *http.Re
 	ept := domains.EmailPasswordToken{}
 	err := json.NewDecoder(r.Body).Decode(&ept)
 	if err != nil {
-		controller.logger.Println(err.Error())
-		ERROR(w, http.StatusUnprocessableEntity, err)
+		controller.handleError(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 	validate := validator.New()
 	err = validate.Struct(ept)
 	if err != nil {
-		controller.logger.Println(err.Error())
-		ERROR(w, http.StatusUnprocessableEntity, err)
+		controller.handleError(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 	err = service.ResetPassword(ept.Email, ept.Password, ept.Token)
 	if err != nil {
-		controller.logger.Println(err.Error())
-		ERROR(w, http.StatusUnprocessableEntity, err)
+		controller.handleError(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 	data := Response{Status: domains.Success, Message: "Your password successfully changed."}
@@ -184,40 +171,34 @@ func (controller authController) ChangePassword(w http.ResponseWriter, r *http.R
 	)
 	userId, err := token.ExtractTokenId(r)
 	if err != nil {
-		controller.logger.Println(err.Error())
-		ERROR(w, http.StatusUnauthorized, err)
+		controller.handleError(w, http.StatusUnauthorized, err)
 		return
 	}
 	currentUser, err := service.GetUser(userId)
 	if err != nil {
-		controller.logger.Println(err.Error())
-		ERROR(w, http.StatusNotFound, err)
+		controller.handleError(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 	p := domains.Passwords{}
 	err = json.NewDecoder(r.Body).Decode(&p)
 	if err != nil {
-		controller.logger.Println(err.Error())
-		ERROR(w, http.StatusUnprocessableEntity, err)
+		controller.handleError(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 	validate := validator.New()
 	err = validate.Struct(p)
 	if err != nil {
-		controller.logger.Println(err.Error())
-		ERROR(w, http.StatusUnprocessableEntity, err)
+		controller.handleError(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 	if valid := service.IsValidPassword(currentUser, p.OldPassword); !valid {
 		err = errors.New("Password is incorrect")
-		controller.logger.Println(err.Error())
-		ERROR(w, http.StatusForbidden, err)
+		controller.handleError(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 	err = service.ChangePassword(currentUser, p.NewPassword)
 	if err != nil {
-		controller.logger.Println(err.Error())
-		ERROR(w, http.StatusUnprocessableEntity, err)
+		controller.handleError(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 	JSON(w, http.StatusOK, currentUser)
@@ -233,54 +214,51 @@ func (controller authController) RefreshToken(w http.ResponseWriter, r *http.Req
 	rToken := domains.RefreshToken{}
 	err := json.NewDecoder(r.Body).Decode(&rToken)
 	if err != nil {
-		controller.logger.Println(err.Error())
-		ERROR(w, http.StatusUnprocessableEntity, err)
+		controller.handleError(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 	validate := validator.New()
 	err = validate.Struct(rToken)
 	if err != nil {
-		controller.logger.Println(err.Error())
-		ERROR(w, http.StatusUnprocessableEntity, err)
+		controller.handleError(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 	userId, err := token.ExtractId(rToken.RefreshToken)
 	if err != nil {
-		controller.logger.Println(err.Error())
-		ERROR(w, http.StatusForbidden, err)
+		controller.handleError(w, http.StatusForbidden, err)
 		return
 	}
 	user, err := service.GetUser(userId)
 	if err != nil {
-		controller.logger.Println(err.Error())
-		ERROR(w, http.StatusForbidden, err)
+		controller.handleError(w, http.StatusForbidden, err)
 		return
 	}
 	err = service.Login(user)
 	if err != nil {
-		controller.logger.Println(err.Error())
-		ERROR(w, http.StatusForbidden, err)
+		controller.handleError(w, http.StatusForbidden, err)
 		return
 	}
 	tokenPair, err := token.CreateTokenPair(user.Id)
 	if err != nil {
-		controller.logger.Println(err.Error())
-		ERROR(w, http.StatusUnprocessableEntity, err)
+		controller.handleError(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 	session, err := sessionService.GetSession(user, rToken.RefreshToken)
 	if err != nil {
-		controller.logger.Println(err.Error())
-		ERROR(w, http.StatusForbidden, err)
+		controller.handleError(w, http.StatusForbidden, err)
 		return
 	}
 	session.RefreshToken = tokenPair["refresh_token"]
 	err = sessionService.UpdateSession(session)
 	if err != nil {
-		controller.logger.Println(err.Error())
-		ERROR(w, http.StatusUnprocessableEntity, err)
+		controller.handleError(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 	data := domains.AuthUserToken{User: *user, Token: tokenPair}
 	JSON(w, http.StatusOK, data)
+}
+
+func (controller authController) handleError(w http.ResponseWriter, status int, err error){
+	controller.logger.Println(err.Error())
+	ERROR(w, status, err)
 }

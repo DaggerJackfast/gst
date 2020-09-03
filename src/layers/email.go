@@ -11,11 +11,11 @@ type EmailSenderInterface interface {
 }
 
 type emailSender struct {
-	logger log.Logger
+	logger *log.Logger
 	mode   string
 }
 
-func NewEmailSender(logger log.Logger) EmailSenderInterface {
+func NewEmailSender(logger *log.Logger) EmailSenderInterface {
 	mode := os.Getenv("RUN_MODE")
 	return &emailSender{
 		logger: logger,
