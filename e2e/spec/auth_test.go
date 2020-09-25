@@ -137,7 +137,7 @@ var _ = Describe("Auth", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(response.StatusCode).To(Equal(http.StatusForbidden))
 			expectedBody := map[string]string{
-				"error": "Password is incorrect",
+				"error": "password is incorrect",
 			}
 			Expect(test_utils.GetResponseBodyJson(response)).To(Equal(expectedBody))
 		})

@@ -57,7 +57,7 @@ func (service *authService) Login(user *domains.User) error {
 	}
 	valid := service.IsValidPassword(us, password)
 	if !valid {
-		return errors.New("Password is incorrect")
+		return errors.New("password is incorrect")
 	}
 	user.Modify(*us)
 	return nil
@@ -135,7 +135,7 @@ func (service *authService) ValidateToken(user *domains.User, tokenValue, tokenT
 		return err
 	}
 	if !token.CreatedAt.Add(time.Duration(token.ExpiredIn) * time.Second).Before(time.Now()) {
-		return errors.New("The token time is expired.")
+		return errors.New("the token time is expired")
 	}
 	if token.ProfileToken != tokenValue {
 		return errors.New("The token is wrong.")
